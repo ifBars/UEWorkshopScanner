@@ -1,0 +1,21 @@
+bin/
+obj/
+.vs/
+.idea/
+.work/
+artifacts/
+reports/
+target/
+/local-dotnet-prototype/
+*.user
+*.suo
+
+# Never commit private Workshop packages, extracted Unreal assets, or test maps.
+*.pak
+*.ucas
+*.utoc
+*.uasset
+*.uexp
+*.uheader
+*.umap
+AssetRegistry.bin

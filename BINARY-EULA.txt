@@ -1,0 +1,46 @@
+UEWorkshopScanner Binary End User License Agreement
+Version 1, July 29, 2026
+
+This agreement applies to compiled UEWorkshopScanner distributions that include
+Epic Games Licensed Technology, including the Oodle Data decompression library.
+The UEWorkshopScanner source code remains available under the MIT License. The
+MIT License does not apply to Epic Games Licensed Technology.
+
+By using a compiled distribution that includes Epic Games Licensed Technology,
+you agree to these terms. If you do not agree, do not use that distribution.
+You may still build and use the MIT-licensed source without the bundled
+technology, subject to the licenses of its other dependencies.
+
+1. Permitted use
+
+You may use the Epic Games Licensed Technology only as incorporated into
+UEWorkshopScanner in object-code form, solely to the extent necessary to use
+UEWorkshopScanner for its intended static-analysis and security-scanning
+functions.
+
+2. Restrictions
+
+You may not extract, redistribute, sublicense, reverse engineer, or use the
+Epic Games Licensed Technology separately from UEWorkshopScanner, except to the
+extent that a restriction is prohibited by applicable law. You may not
+incorporate the Epic Games Licensed Technology into another product, service,
+or project.
+
+3. Epic Games disclaimer
+
+Epic Games and its affiliates, licensors, and service providers make no
+representations or warranties of any kind, express or implied, concerning the
+Epic Games Licensed Technology. To the fullest extent permitted by law, all
+warranties, conditions, common-law duties, and representations relating to the
+Epic Games Licensed Technology are disclaimed. Epic Games and its affiliates,
+licensors, and service providers have no liability arising from or related to
+your use of UEWorkshopScanner or the Epic Games Licensed Technology.
+
+4. No affiliation
+
+UEWorkshopScanner is an independent project. It is not affiliated with,
+sponsored by, or endorsed by Epic Games, Inc.
+
+The Unreal Engine End User License Agreement also governs the Epic Games
+Licensed Technology:
+https://www.unrealengine.com/eula/unreal
