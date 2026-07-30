@@ -67,5 +67,6 @@ is safe. Keep Windows Security or another antivirus enabled.
 
 The scanner does not upload Workshop maps or reports.
 
-Read BINARY-EULA.txt, THIRD_PARTY_NOTICES.txt, and the files under LICENSES.
+Read BINARY-EULA.txt, THIRD_PARTY_NOTICES.txt, THIRD_PARTY_LICENSES.txt, and
+the files under LICENSES.
 Use SHA256SUMS to verify the extracted files.

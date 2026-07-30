@@ -17,6 +17,7 @@ if (Test-Path -LiteralPath $committedBin) {
 foreach ($required in @(
     $manifestPath,
     $iconPath,
+    (Join-Path $projectRoot "THIRD_PARTY_LICENSES.txt"),
     (Join-Path $projectRoot "integrations\meccha-ue4ss\MANUAL-INSTALL.txt"),
     (Join-Path $packageRoot "README.md"),
     $scriptPath,

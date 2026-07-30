@@ -24,6 +24,7 @@ UEWorkshopScanner-cli-windows-x64/
   ue-workshop-scanner.exe
   oo2core_9_win64.dll
   BINARY-EULA.txt
+  THIRD_PARTY_LICENSES.txt
   THIRD_PARTY_NOTICES.txt
   LICENSE
   README.md
@@ -45,7 +46,8 @@ Authenticode-valid Epic Games build currently installed at UE 5.6's canonical
 apartment package with no skipped chunks. Both use the Oodle 2.9.10 ABI
 expected by retoc's upstream loader.
 
-The release must include `BINARY-EULA.txt` and `THIRD_PARTY_NOTICES.txt`. The
+The release must include `BINARY-EULA.txt`, `THIRD_PARTY_NOTICES.txt`, and the
+Cargo.lock-derived `THIRD_PARTY_LICENSES.txt`. The
 CLI must expose those terms through `--licenses`, require one-time acceptance
 when it uses the bundled decoder, and support explicit `--accept-eula` for
 non-interactive use. Binary EULA version 2 also states that the scanner can

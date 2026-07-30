@@ -230,6 +230,15 @@ cargo clippy --locked --all-targets -- -D warnings
 cargo +1.88.0 check --locked --all-targets
 ```
 
+When `Cargo.lock` changes, install
+[cargo-about](https://github.com/EmbarkStudios/cargo-about) and regenerate the
+shipped dependency notices:
+
+```powershell
+cargo install --locked --features cli cargo-about
+.\scripts\generate-third-party-licenses.ps1
+```
+
 New blocking rules need an inert positive test, a benign negative test, and a
 documented behavior chain. Do not commit malware, private Workshop maps,
 proprietary Unreal assets, Oodle binaries, or decryption keys.
@@ -259,7 +268,9 @@ Do not attach live malware or private Workshop content to a public issue.
 The source code uses the [MIT License](LICENSE). Binary releases containing
 Epic Games Licensed Technology are also subject to
 [BINARY-EULA.txt](BINARY-EULA.txt) and
-[THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
+[THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt). The generated
+[THIRD_PARTY_LICENSES.txt](THIRD_PARTY_LICENSES.txt) carries the license texts
+and attribution for the complete locked Rust dependency graph.
 
 UEWorkshopScanner is independent and is not affiliated with Epic Games, Valve,
 or the developers of MECCHA CHAMELEON.

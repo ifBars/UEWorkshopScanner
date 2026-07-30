@@ -1,5 +1,5 @@
 UEWorkshopScanner Third-Party Notices
-Last updated: July 29, 2026
+Last updated: July 30, 2026
 
 Epic Games Licensed Technology
 --------------------------------
@@ -22,6 +22,17 @@ UEWorkshopScanner uses retoc, Copyright (c) 2023 Truman K.
 retoc is distributed under the MIT License:
 https://github.com/trumank/retoc
 
-The full dependency license inventory for a particular build is available from
-that build's source revision and Cargo.lock. No third-party component is
-relicensed by the UEWorkshopScanner MIT License.
+repak
+-----
+
+retoc uses repak, Copyright (c) 2023 Truman K.
+repak is offered under MIT OR Apache-2.0:
+https://github.com/trumank/repak
+
+Rust dependency inventory
+-------------------------
+
+THIRD_PARTY_LICENSES.txt contains the complete generated license inventory and
+license texts for the Rust dependency graph locked in Cargo.lock. It includes
+direct and transitive dependencies. No third-party component is relicensed by
+the UEWorkshopScanner MIT License.

@@ -1,0 +1,21 @@
+UEWorkshopScanner Rust Third-Party Licenses
+================================================
+
+This file is generated from the dependency graph locked in Cargo.lock.
+The license selected for a dual-licensed dependency is the first compatible
+license in about.toml. The dependency remains available under every license
+offered by its author.
+
+{{#each licenses}}
+------------------------------------------------
+{{{name}}}
+SPDX: {{{id}}}
+
+Used by:
+{{#each used_by}}
+- {{{crate.name}}} {{{crate.version}}}{{#if crate.repository}} ({{{crate.repository}}}){{/if}}
+{{/each}}
+
+{{{text}}}
+
+{{/each}}

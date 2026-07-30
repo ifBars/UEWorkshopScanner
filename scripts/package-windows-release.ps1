@@ -51,6 +51,7 @@ Copy-Item -LiteralPath $OodlePath -Destination (Join-Path $stageRoot "oo2core_9_
 Copy-Item -LiteralPath (Join-Path $projectRoot "BINARY-EULA.txt") -Destination $stageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "EXPERIMENTAL.txt") -Destination $stageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "THIRD_PARTY_NOTICES.txt") -Destination $stageRoot
+Copy-Item -LiteralPath (Join-Path $projectRoot "THIRD_PARTY_LICENSES.txt") -Destination $stageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "LICENSE") -Destination $stageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "README.md") -Destination $stageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "SECURITY.md") -Destination $stageRoot

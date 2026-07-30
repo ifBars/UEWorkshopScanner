@@ -143,6 +143,7 @@ Copy-Item -LiteralPath (Join-Path $projectRoot "integrations\meccha-ue4ss\MANUAL
     -Destination (Join-Path $manualStage "README-FIRST.txt")
 Copy-Item -LiteralPath (Join-Path $projectRoot "BINARY-EULA.txt") -Destination $manualStage
 Copy-Item -LiteralPath (Join-Path $projectRoot "THIRD_PARTY_NOTICES.txt") -Destination $manualStage
+Copy-Item -LiteralPath (Join-Path $projectRoot "THIRD_PARTY_LICENSES.txt") -Destination $manualStage
 Copy-Item -LiteralPath (Join-Path $projectRoot "LICENSE") `
     -Destination (Join-Path $manualLicenses "UEWorkshopScanner-MIT.txt")
 Copy-Item -LiteralPath (Join-Path $Ue4ssOverlayPath "LICENSE") `
