@@ -7,6 +7,8 @@ and releases use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0-alpha.1] - 2026-07-29
+
 ### Added
 
 - Rust CLI for in-process UE5 IoStore scanning through retoc.
@@ -25,6 +27,7 @@ and releases use [Semantic Versioning](https://semver.org/).
 - Versioned report schema, public scanner facade, and embedded game profiles.
 - Direct JSON file output for launcher and in-game integrations.
 - Observe-only Meccha UE4SS prototype and Nexus/Thunderstore packaging.
+- Decoder-free Windows CI artifacts and an experimental complete prerelease.
 
 ### Changed
 
@@ -34,4 +37,5 @@ and releases use [Semantic Versioning](https://semver.org/).
 - Replaced process-environment Oodle configuration with a race-safe,
   process-wide adapter API.
 
-[Unreleased]: https://github.com/ifBars/UEWorkshopScanner/commits/main
+[Unreleased]: https://github.com/ifBars/UEWorkshopScanner/compare/v0.1.0-alpha.1...HEAD
+[0.1.0-alpha.1]: https://github.com/ifBars/UEWorkshopScanner/releases/tag/v0.1.0-alpha.1

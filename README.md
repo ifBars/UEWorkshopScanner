@@ -21,9 +21,26 @@ added a security patch for MOD maps. This scanner is additional defense for
 Meccha and a foundation for protecting other Unreal Workshop ecosystems.
 
 > [!IMPORTANT]
-> This is pre-release software. There is no public binary download yet, and an
-> `allow` verdict is not proof that a Workshop item is safe. The current CLI
-> also does not intercept a game or Steam download automatically.
+> All downloads are experimental. An `allow` verdict is not proof that a
+> Workshop item is safe. The current CLI also does not intercept a game or
+> Steam download automatically.
+
+## Experimental downloads
+
+Choose the package that matches how you want to test:
+
+| Download | Contents | Oodle setup |
+| --- | --- | --- |
+| [GitHub pre-release](https://github.com/ifBars/UEWorkshopScanner/releases/tag/v0.1.0-alpha.1) | Complete Windows ZIP with the CLI, approved Oodle decoder, binary EULA, notices, and checksums | Review `BINARY-EULA.txt`, run `--licenses`, then `--accept-eula` |
+| [Latest successful GitHub Actions run](https://github.com/ifBars/UEWorkshopScanner/actions/workflows/ci.yml?query=branch%3Amain+is%3Asuccess) | Decoder-free Windows CLI artifact retained for 30 days | Supply your own authorized decoder using `--oodle-path` and `--oodle-sha256` |
+
+The Actions artifact is built entirely from the public repository and does not
+contain Epic Games Licensed Technology. Read its `EXPERIMENTAL.txt` and
+`OODLE-SETUP.txt` before testing.
+
+The pre-release ZIP is the easier path for most testers, but it is still
+experimental software. Its bundled decoder is governed by the included binary
+terms and the Unreal Engine EULA, not the project's MIT License.
 
 ## Quick start
 
@@ -74,7 +91,7 @@ current build.
 <details>
 <summary><strong>Bundled decoder builds and license acceptance</strong></summary>
 
-Planned Windows release archives keep the scanner and an approved Oodle
+Complete Windows pre-release archives keep the scanner and an approved Oodle
 decoder together. The first run will ask you to review and accept the binary
 terms:
 

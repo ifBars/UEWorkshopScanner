@@ -4,7 +4,7 @@ param(
     [ValidateScript({ Test-Path -LiteralPath $_ -PathType Leaf })]
     [string] $OodlePath,
 
-    [string] $Version = "0.1.0",
+    [string] $Version = "0.1.0-alpha.1",
 
     [string] $OutputDirectory = (Join-Path $PSScriptRoot "..\artifacts\release")
 )
@@ -49,9 +49,11 @@ New-Item -ItemType Directory -Path $stageRoot | Out-Null
 Copy-Item -LiteralPath (Join-Path $rustRoot "target\release\ue-workshop-scanner.exe") -Destination $stageRoot
 Copy-Item -LiteralPath $OodlePath -Destination (Join-Path $stageRoot "oo2core_9_win64.dll")
 Copy-Item -LiteralPath (Join-Path $projectRoot "BINARY-EULA.txt") -Destination $stageRoot
+Copy-Item -LiteralPath (Join-Path $projectRoot "EXPERIMENTAL.txt") -Destination $stageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "THIRD_PARTY_NOTICES.txt") -Destination $stageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "LICENSE") -Destination $stageRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot "README.md") -Destination $stageRoot
+Copy-Item -LiteralPath (Join-Path $projectRoot "SECURITY.md") -Destination $stageRoot
 
 $hashLines = Get-ChildItem -LiteralPath $stageRoot -File |
     Sort-Object Name |

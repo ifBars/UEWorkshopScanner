@@ -1,0 +1,25 @@
+Oodle setup for decoder-free experimental builds
+================================================
+
+This GitHub Actions build does not include oo2core_9_win64.dll.
+
+If you are authorized to use an Unreal Engine 5.6 installation, its Oodle Data
+2.9.10 Windows redistributable is commonly located at:
+
+  Engine\Source\Programs\Shared\EpicGames.Oodle\Sdk\2.9.10\win\redist\oo2core_9_win64.dll
+
+Calculate the file's SHA-256:
+
+  Get-FileHash "D:\path\to\oo2core_9_win64.dll" -Algorithm SHA256
+
+Then scan with both explicit arguments:
+
+  .\ue-workshop-scanner.exe "D:\path\to\WorkshopItem" `
+    --oodle-path "D:\path\to\oo2core_9_win64.dll" `
+    --oodle-sha256 "<sha256>"
+
+The scanner performs no decoder download and refuses a digest mismatch.
+Do not obtain Oodle from DLL download sites, unrelated games, or mirrors.
+
+The complete GitHub pre-release ZIP includes the approved decoder, binary EULA,
+notices, and one-time acceptance flow instead.

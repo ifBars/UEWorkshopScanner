@@ -1,0 +1,15 @@
+UEWorkshopScanner Experimental Build
+====================================
+
+This build is provided for testing and research. It has not reached a stable
+release and may miss malicious content, produce false positives, or fail to
+inspect unsupported Unreal Engine packages.
+
+An "allow" verdict is not proof that a Workshop item is safe.
+
+GitHub Actions builds do not include Epic Games Licensed Technology. Follow
+OODLE-SETUP.txt to supply your own authorized Oodle Data decoder when scanning
+compressed IoStore content.
+
+Do not run the scanner as administrator. Do not execute files extracted from
+Workshop items. Report security problems privately through SECURITY.md.

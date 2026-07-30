@@ -44,3 +44,35 @@ jobs:
 
       - name: Run Clippy
         run: cargo clippy --locked --all-targets -- -D warnings
+
+  artifact:
+    name: Experimental Windows artifact
+    if: github.event_name == 'push'
+    needs: [msrv, test]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Package decoder-free CLI
+        shell: pwsh
+        run: ./scripts/package-ci-windows.ps1
+
+      - name: Upload experimental CLI
+        id: upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: UEWorkshopScanner-experimental-windows-x64-${{ github.run_number }}
+          path: artifacts/ci/UEWorkshopScanner-experimental-windows-x64/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Add download to job summary
+        shell: pwsh
+        run: |
+          "### Experimental Windows CLI" >> $env:GITHUB_STEP_SUMMARY
+          "[Download artifact](${{ steps.upload.outputs.artifact-url }})" >> $env:GITHUB_STEP_SUMMARY
+          "" >> $env:GITHUB_STEP_SUMMARY
+          "Decoder-free build: supply an authorized Oodle DLL as described in OODLE-SETUP.txt." >> $env:GITHUB_STEP_SUMMARY

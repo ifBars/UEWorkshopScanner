@@ -18,6 +18,7 @@ Run the same checks as CI:
 ```powershell
 cargo fmt --check
 .\scripts\test-meccha-package.ps1
+.\scripts\package-ci-windows.ps1
 cargo test --locked
 cargo clippy --locked --all-targets -- -D warnings
 cargo +1.88.0 check --locked --all-targets
