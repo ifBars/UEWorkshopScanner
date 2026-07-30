@@ -1,16 +1,88 @@
 use crate::{
     container,
     envelope::inspect_input,
+    game_profile::{GameProfile, GameProfileSummary},
     model::{AnalysisCompleteness, Report},
-    rules,
+    oodle, rules,
     threat_intel::{classify_disposition, classify_families, verdict_for},
 };
 use anyhow::Result;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 const RETOC_REVISION: &str = "d034ade1ae8117d4786eaf6b0418d4cf48474d7f";
+pub const REPORT_SCHEMA_VERSION: u32 = 1;
 
-pub(crate) fn scan(input: &Path, max_item_bytes: u64) -> Result<Report> {
+/// An explicitly authorized Oodle decoder for compressed IoStore content.
+#[derive(Clone, Debug)]
+#[non_exhaustive]
+pub struct OodleDecoder {
+    pub path: PathBuf,
+    pub sha256: String,
+}
+
+impl OodleDecoder {
+    pub fn new(path: impl Into<PathBuf>, sha256: impl Into<String>) -> Self {
+        Self {
+            path: path.into(),
+            sha256: sha256.into(),
+        }
+    }
+}
+
+/// Options shared by embedded and command-line scanner integrations.
+#[derive(Clone, Debug)]
+#[non_exhaustive]
+pub struct ScannerOptions {
+    pub max_item_bytes: u64,
+    pub game_profile: Option<GameProfile>,
+    pub oodle_decoder: Option<OodleDecoder>,
+    pub accept_bundled_eula: bool,
+}
+
+impl Default for ScannerOptions {
+    fn default() -> Self {
+        Self {
+            max_item_bytes: 32 * 1024 * 1024,
+            game_profile: None,
+            oodle_decoder: None,
+            accept_bundled_eula: false,
+        }
+    }
+}
+
+/// Reusable scanner facade for launchers, mod managers, and tests.
+///
+/// Oodle is process-wide: multiple scanners may reuse the same decoder
+/// configuration, but cannot switch decoder DLLs after initialization.
+pub struct Scanner {
+    options: ScannerOptions,
+}
+
+impl Scanner {
+    pub fn new(options: ScannerOptions) -> Result<Self> {
+        let decoder = options.oodle_decoder.as_ref();
+        oodle::configure(
+            decoder.map(|value| value.path.as_path()),
+            decoder.map(|value| value.sha256.as_str()),
+            options.accept_bundled_eula,
+        )?;
+        Ok(Self { options })
+    }
+
+    pub fn scan(&self, input: impl AsRef<Path>) -> Result<Report> {
+        scan(
+            input.as_ref(),
+            self.options.max_item_bytes,
+            self.options.game_profile.as_ref(),
+        )
+    }
+}
+
+pub(crate) fn scan(
+    input: &Path,
+    max_item_bytes: u64,
+    game_profile: Option<&GameProfile>,
+) -> Result<Report> {
     let mut target = inspect_input(input, max_item_bytes)?;
     let (mut container_artifacts, container_counts, mut container_reasons) =
         container::scan_utocs(&target.utocs, max_item_bytes);
@@ -48,12 +120,14 @@ pub(crate) fn scan(input: &Path, max_item_bytes: u64) -> Result<Report> {
     let verdict = verdict_for(&disposition, &completeness);
 
     Ok(Report {
+        schema_version: REPORT_SCHEMA_VERSION,
         scanner: "ue-workshop-scanner",
         version: env!("CARGO_PKG_VERSION"),
         retoc_revision: RETOC_REVISION,
         input: input.display().to_string(),
         input_kind: target.kind,
         input_sha256: target.input_hash,
+        game_profile: game_profile.map(GameProfileSummary::from),
         verdict,
         complete,
         analysis_completeness: completeness,
@@ -70,7 +144,7 @@ pub(crate) fn scan(input: &Path, max_item_bytes: u64) -> Result<Report> {
         notes: vec![
             "IoStore content was read in-process through retoc; UnrealPak and Unreal Engine were not started.".to_owned(),
             "Loose files were inspected as bytes only; scripts and executables were never loaded or executed.".to_owned(),
-            "The patched Oodle adapter performs no network requests and requires an explicit path plus SHA-256 digest.".to_owned(),
+            "The patched Oodle adapter performs no network requests and accepts only a verified, process-wide decoder configuration.".to_owned(),
         ],
     })
 }

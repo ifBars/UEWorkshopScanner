@@ -6,7 +6,10 @@
 //! SHA-256 digest.
 
 use sha2::{Digest, Sha256};
-use std::sync::OnceLock;
+use std::{
+    path::{Path, PathBuf},
+    sync::OnceLock,
+};
 
 type Result<T, E = Error> = std::result::Result<T, E>;
 
@@ -80,10 +83,10 @@ mod oodle_lz {
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("UEWS_OODLE_PATH is not set; refusing retoc's network download path")]
+    #[error("an Oodle decoder was not configured; refusing retoc's network download path")]
     MissingPath,
-    #[error("UEWS_OODLE_SHA256 is not set; an explicit decoder digest is required")]
-    MissingDigest,
+    #[error("the Oodle decoder was already configured with a different path or digest")]
+    ConflictingConfiguration,
     #[error("Oodle decoder does not exist: {0}")]
     MissingFile(String),
     #[error("Oodle decoder SHA-256 mismatch; expected {expected}, got {found}")]
@@ -181,22 +184,48 @@ impl Oodle {
 }
 
 static OODLE: OnceLock<Option<Oodle>> = OnceLock::new();
+static CONFIG: OnceLock<DecoderConfig> = OnceLock::new();
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct DecoderConfig {
+    path: PathBuf,
+    digest: String,
+}
+
+/// Configures the only decoder that this process may load.
+///
+/// Repeating the same configuration is allowed. Changing it after the first
+/// call is rejected so parallel scans cannot race to load different DLLs.
+pub fn configure(path: &Path, digest: &str) -> Result<()> {
+    let config = DecoderConfig {
+        path: path.to_path_buf(),
+        digest: digest.trim().to_ascii_lowercase(),
+    };
+    if CONFIG.set(config.clone()).is_ok() {
+        return Ok(());
+    }
+    if CONFIG.get() == Some(&config) {
+        Ok(())
+    } else {
+        Err(Error::ConflictingConfiguration)
+    }
+}
 
 fn load_oodle() -> Result<Oodle> {
-    let path = std::env::var_os("UEWS_OODLE_PATH").ok_or(Error::MissingPath)?;
-    let path = std::path::PathBuf::from(path);
+    let config = CONFIG.get().ok_or(Error::MissingPath)?;
+    let path = &config.path;
     if !path.is_file() {
         return Err(Error::MissingFile(path.display().to_string()));
     }
 
-    let expected = std::env::var("UEWS_OODLE_SHA256")
-        .map_err(|_| Error::MissingDigest)?
-        .trim()
-        .to_ascii_lowercase();
+    let expected = &config.digest;
     let bytes = std::fs::read(&path)?;
     let found = hex::encode(Sha256::digest(&bytes));
-    if expected != found {
-        return Err(Error::HashMismatch { expected, found });
+    if expected != &found {
+        return Err(Error::HashMismatch {
+            expected: expected.clone(),
+            found,
+        });
     }
 
     // SAFETY: The user-selected file was verified against the explicit digest
@@ -219,5 +248,20 @@ pub fn oodle() -> Result<&'static Oodle> {
         (_, Some(oodle)) => Ok(oodle),
         (Some(error), _) => Err(error),
         _ => Err(Error::InitializationFailed),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn decoder_configuration_is_idempotent_but_cannot_be_replaced() {
+        let first = Path::new("first-decoder.dll");
+        configure(first, "ABCDEF").unwrap();
+        configure(first, "abcdef").unwrap();
+
+        let error = configure(Path::new("another-decoder.dll"), "abcdef").unwrap_err();
+        assert!(matches!(error, Error::ConflictingConfiguration));
     }
 }

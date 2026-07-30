@@ -1,15 +1,19 @@
+use crate::game_profile::GameProfileSummary;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Report {
+    pub schema_version: u32,
     pub scanner: &'static str,
     pub version: &'static str,
     pub retoc_revision: &'static str,
     pub input: String,
     pub input_kind: &'static str,
     pub input_sha256: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub game_profile: Option<GameProfileSummary>,
     pub verdict: &'static str,
     pub complete: bool,
     pub analysis_completeness: AnalysisCompleteness,
@@ -26,7 +30,7 @@ pub struct Report {
     pub notes: Vec<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Artifact {
     pub location: String,
     pub kind: &'static str,
@@ -76,7 +80,7 @@ impl Finding {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct AnalysisCompleteness {
     pub status: &'static str,
     pub is_complete: bool,
@@ -84,7 +88,7 @@ pub struct AnalysisCompleteness {
     pub reasons: Vec<CompletenessReason>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct CompletenessReason {
     pub reason_id: &'static str,
     pub phase: &'static str,
@@ -93,7 +97,7 @@ pub struct CompletenessReason {
     pub location: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct ThreatDisposition {
     pub classification: &'static str,
     pub headline: &'static str,
@@ -104,7 +108,7 @@ pub struct ThreatDisposition {
     pub related_finding_ids: Vec<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct ThreatFamilyMatch {
     pub family_id: &'static str,
     pub variant_id: &'static str,
@@ -117,7 +121,7 @@ pub struct ThreatFamilyMatch {
     pub evidence: Vec<ThreatFamilyEvidence>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct ThreatFamilyEvidence {
     pub kind: &'static str,
     pub value: String,

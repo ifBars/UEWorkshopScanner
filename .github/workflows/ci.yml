@@ -35,6 +35,10 @@ jobs:
       - name: Check formatting
         run: cargo fmt --check
 
+      - name: Validate Meccha UE4SS package
+        shell: pwsh
+        run: ./scripts/test-meccha-package.ps1
+
       - name: Run tests
         run: cargo test --locked
 

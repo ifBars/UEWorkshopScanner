@@ -1,12 +1,13 @@
 mod cli;
 mod container;
 mod envelope;
+pub mod game_profile;
 mod hashing;
 mod markers;
-mod model;
+pub mod model;
 mod oodle;
 mod rules;
-mod scanner;
+pub mod scanner;
 mod threat_intel;
 
 /// Runs the command-line scanner with arguments from the current process.

@@ -23,7 +23,7 @@ pub(crate) fn configure(
     match (explicit_path, expected_digest) {
         (Some(path), Some(digest)) => {
             let actual = verify_decoder(path, Some(digest))?;
-            configure_environment(path, &actual);
+            configure_decoder(path, &actual)?;
             Ok(())
         }
         (None, None) => {
@@ -37,13 +37,23 @@ pub(crate) fn configure(
                         "bundled {BUNDLED_OODLE_FILE} is not an approved Oodle 2.9.10 redist build; got SHA-256 {actual}"
                     );
                 }
-                configure_environment(&bundled, &actual);
+                configure_decoder(&bundled, &actual)?;
                 ensure_bundled_eula_accepted(accept_eula)?;
             }
             Ok(())
         }
         _ => bail!("--oodle-path and --oodle-sha256 must be supplied together"),
     }
+}
+
+pub(crate) fn accept_bundled_eula() -> Result<()> {
+    let bundled = std::env::current_exe()
+        .context("could not resolve the scanner executable path")?
+        .with_file_name(BUNDLED_OODLE_FILE);
+    if !bundled.is_file() {
+        bail!("no bundled {BUNDLED_OODLE_FILE} was found beside the scanner executable");
+    }
+    configure(None, None, true)
 }
 
 fn verify_decoder(path: &Path, expected_digest: Option<&str>) -> Result<String> {
@@ -63,12 +73,12 @@ fn verify_decoder(path: &Path, expected_digest: Option<&str>) -> Result<String> 
     Ok(actual)
 }
 
-fn configure_environment(path: &Path, actual_digest: &str) {
-    // SAFETY: CLI configuration runs before retoc or any worker thread is created.
-    unsafe {
-        std::env::set_var("UEWS_OODLE_PATH", path);
-        std::env::set_var("UEWS_OODLE_SHA256", actual_digest);
-    }
+fn configure_decoder(path: &Path, actual_digest: &str) -> Result<()> {
+    let canonical_path = path
+        .canonicalize()
+        .with_context(|| format!("could not resolve decoder path {}", path.display()))?;
+    oodle_loader::configure(&canonical_path, actual_digest)
+        .context("could not configure the process-wide Oodle decoder")
 }
 
 pub(crate) fn print_licenses() {

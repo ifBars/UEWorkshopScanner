@@ -79,9 +79,9 @@ directory and returns deterministic JSON plus a verdict-specific exit code. It
 works for CI, researchers, mod managers, and games that can invoke an external
 worker.
 
-It does not currently expose a stable Rust library API. Before another frontend
-links the crate directly, the project should make scan options and report types
-public and version the serialized report contract.
+The crate now exposes `Scanner`, `ScannerOptions`, and public report types. JSON
+reports include `schema_version: 1`; consumers should reject unsupported major
+schema versions rather than guessing at changed semantics.
 
 ### Launcher preflight
 
@@ -176,8 +176,8 @@ would need a version-specific native hook rather than a simple Lua hook.
 UE4SS also warns that it is not plug-and-play for every game and may require
 updated signatures after engine or game changes.
 
-Keep a community Meccha adapter in a separate crate or repository with these
-requirements:
+Keep the community Meccha adapter isolated under `integrations/meccha-ue4ss`
+with these requirements:
 
 - support only explicitly tested game build IDs;
 - make it unmistakable when an unknown build is not protected;
@@ -210,18 +210,18 @@ then, keep detector modules independent of Steam and game-specific paths.
 
 ## Delivery order
 
-1. **Version the scan contract.** Expose public scan options and report types,
-   add a `schema_version`, and document compatibility.
-2. **Add game profiles.** Start with Meccha App ID `4704690`; keep path and
-   container discovery declarative where possible.
-3. **Build launcher preflight.** Discover libraries, enumerate installed items,
+1. **Version the scan contract.** Completed with schema version 1 and a public
+   Rust facade.
+2. **Add game profiles.** Started with Meccha App ID `4704690`.
+3. **Trace the Meccha boundary.** Use the observe-only UE4SS prototype on a
+   benign map to identify a cancellable, version-gated transition.
+4. **Build launcher preflight.** Discover libraries, enumerate installed items,
    cache complete verdicts, and launch through Steam.
-4. **Add watcher mode.** Scan stable new or updated Workshop manifests and
+5. **Add watcher mode.** Scan stable new or updated Workshop manifests and
    notify the user without promising enforcement.
-5. **Prototype the Meccha gate separately.** Trace the current game build's
-   download callback and mount path, then decide whether the maintenance and
-   injection risk are acceptable.
-6. **Add games through evidence.** Require a public support request, benign
+6. **Implement the Meccha gate only after validation.** Hold the exact
+   download-to-load transition, fail closed, and expose protection status.
+7. **Add games through evidence.** Require a public support request, benign
    fixture plan, layout evidence, compression details, and a named maintainer.
 
 ## Non-goals

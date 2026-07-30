@@ -17,6 +17,7 @@ Run the same checks as CI:
 
 ```powershell
 cargo fmt --check
+.\scripts\test-meccha-package.ps1
 cargo test --locked
 cargo clippy --locked --all-targets -- -D warnings
 cargo +1.88.0 check --locked --all-targets
@@ -48,6 +49,7 @@ Keep process and product concerns separate too:
 - `cli.rs` owns arguments, terminal output, and exit codes;
 - `scanner.rs` coordinates the scan and builds the report;
 - `oodle.rs` owns decoder verification and binary-license handling.
+- `integrations/` owns game-specific adapters and mod-manager packaging.
 
 Do not add Steam App IDs, install paths, or game-specific loading behavior to
 the detector modules. Those belong in a game profile or integration layer.

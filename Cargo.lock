@@ -1518,6 +1518,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "hex",
+ "oodle_loader",
  "rayon",
  "retoc",
  "serde",

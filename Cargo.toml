@@ -14,6 +14,7 @@ publish = false
 [dependencies]
 anyhow = "1.0.100"
 hex = "0.4.3"
+oodle_loader = { path = "vendor/oodle_loader_safe" }
 retoc = { git = "https://github.com/trumank/retoc.git", rev = "d034ade1ae8117d4786eaf6b0418d4cf48474d7f" }
 rayon = "1.11.0"
 serde = { version = "1.0.228", features = ["derive"] }

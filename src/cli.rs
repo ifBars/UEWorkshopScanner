@@ -1,4 +1,8 @@
-use crate::{oodle, scanner};
+use crate::{
+    game_profile::{built_in_game_profiles, game_profile},
+    oodle,
+    scanner::{OodleDecoder, Scanner, ScannerOptions},
+};
 use anyhow::{Context, Result, bail};
 use std::{ffi::OsString, path::PathBuf};
 
@@ -9,6 +13,8 @@ struct Options {
     oodle_sha256: Option<String>,
     max_item_bytes: u64,
     accept_eula: bool,
+    game: Option<String>,
+    output: Option<PathBuf>,
 }
 
 pub(crate) fn run(args: Vec<OsString>) -> Result<i32> {
@@ -31,22 +37,61 @@ pub(crate) fn run(args: Vec<OsString>) -> Result<i32> {
         oodle::print_licenses();
         return Ok(0);
     }
+    if args.len() == 1 && args[0] == "--accept-eula" {
+        oodle::accept_bundled_eula()?;
+        println!("Bundled binary terms accepted.");
+        return Ok(0);
+    }
+    if args.iter().any(|argument| argument == "--list-games") {
+        for profile in built_in_game_profiles()? {
+            println!(
+                "{}\t{}\tSteam App ID {}",
+                profile.id, profile.name, profile.steam_app_id
+            );
+        }
+        return Ok(0);
+    }
 
     let options = parse_options(args)?;
-    oodle::configure(
-        options.oodle_path.as_deref(),
-        options.oodle_sha256.as_deref(),
-        options.accept_eula,
-    )?;
-
-    let report = scanner::scan(&options.input, options.max_item_bytes)?;
+    let selected_profile = match options.game.as_deref() {
+        Some(id) => Some(
+            game_profile(id)?
+                .with_context(|| format!("unknown game profile: {id}; use --list-games"))?,
+        ),
+        None => None,
+    };
+    let oodle_decoder = match (options.oodle_path, options.oodle_sha256) {
+        (Some(path), Some(sha256)) => Some(OodleDecoder::new(path, sha256)),
+        (None, None) => None,
+        _ => bail!("--oodle-path and --oodle-sha256 must be supplied together"),
+    };
+    let scanner = Scanner::new(ScannerOptions {
+        max_item_bytes: options.max_item_bytes,
+        game_profile: selected_profile,
+        oodle_decoder,
+        accept_bundled_eula: options.accept_eula,
+    })?;
+    let report = scanner.scan(&options.input)?;
     let exit_code = match report.verdict {
         "allow" => 0,
         "review" => 2,
         "block" => 3,
         _ => 4,
     };
-    println!("{}", serde_json::to_string_pretty(&report)?);
+    let json = serde_json::to_string_pretty(&report)?;
+    if let Some(output) = options.output {
+        if let Some(parent) = output
+            .parent()
+            .filter(|parent| !parent.as_os_str().is_empty())
+        {
+            std::fs::create_dir_all(parent)
+                .with_context(|| format!("could not create {}", parent.display()))?;
+        }
+        std::fs::write(&output, format!("{json}\n"))
+            .with_context(|| format!("could not write {}", output.display()))?;
+    } else {
+        println!("{json}");
+    }
     Ok(exit_code)
 }
 
@@ -59,6 +104,8 @@ fn parse_options(args: Vec<OsString>) -> Result<Options> {
     let mut oodle_sha256 = None;
     let mut max_item_bytes = 32 * 1024 * 1024;
     let mut accept_eula = false;
+    let mut game = None;
+    let mut output = None;
     while let Some(argument) = args.next() {
         match argument.to_string_lossy().as_ref() {
             "--oodle-path" => {
@@ -87,6 +134,19 @@ fn parse_options(args: Vec<OsString>) -> Result<Options> {
                 max_item_bytes = value * 1024 * 1024;
             }
             "--accept-eula" => accept_eula = true,
+            "--game" => {
+                game = Some(
+                    args.next()
+                        .context("--game needs a value")?
+                        .to_string_lossy()
+                        .into_owned(),
+                );
+            }
+            "--output" => {
+                output = Some(PathBuf::from(
+                    args.next().context("--output needs a value")?,
+                ));
+            }
             "--licenses" => unreachable!("handled before option parsing"),
             unknown => bail!("unknown argument: {unknown}"),
         }
@@ -97,6 +157,8 @@ fn parse_options(args: Vec<OsString>) -> Result<Options> {
         oodle_sha256,
         max_item_bytes,
         accept_eula,
+        game,
+        output,
     })
 }
 
@@ -106,6 +168,7 @@ fn print_help() {
          Static malware scanner for Unreal Engine Workshop content.\n\n\
          Usage:\n  \
            ue-workshop-scanner <file.utoc|directory> [options]\n  \
+           ue-workshop-scanner --accept-eula\n  \
            ue-workshop-scanner --licenses\n\n\
          Options:\n  \
            --max-item-mb <n>        Per-file/chunk scan cap (1-2048, default 32)\n  \
@@ -113,6 +176,9 @@ fn print_help() {
            --oodle-path <dll>       Explicit Oodle decoder path\n  \
            --oodle-sha256 <hex>     Required digest for an explicit decoder\n  \
            --accept-eula            Accept the bundled binary EULA non-interactively\n  \
+           --game <profile-id>      Include a supported game profile in the report\n  \
+           --list-games             List embedded game profiles\n  \
+           --output <path>          Write JSON to a file instead of standard output\n  \
            --licenses               Print source license, binary EULA, and notices\n  \
            -h, --help               Print help\n  \
            -V, --version            Print version\n\n\
@@ -139,23 +205,19 @@ mod tests {
         assert_eq!(options.input, PathBuf::from("fixture"));
         assert_eq!(options.max_item_bytes, 64 * 1024 * 1024);
         assert!(options.accept_eula);
+        assert!(options.game.is_none());
+        assert!(options.output.is_none());
     }
 
     #[test]
     fn requires_oodle_path_and_digest_as_a_pair() {
-        let options = parse_options(vec![
+        let error = run(vec![
             "fixture".into(),
             "--oodle-path".into(),
             "decoder.dll".into(),
         ])
-        .unwrap();
-
-        let error = oodle::configure(
-            options.oodle_path.as_deref(),
-            options.oodle_sha256.as_deref(),
-            false,
-        )
         .unwrap_err();
+
         assert!(
             error
                 .to_string()

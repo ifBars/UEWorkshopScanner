@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "meccha-chameleon",
+  "name": "MECCHA CHAMELEON",
+  "steam_app_id": 4704690,
+  "unreal_engine": "5.6",
+  "container_extensions": [
+    "utoc",
+    "ucas",
+    "pak"
+  ],
+  "integration": "meccha-ue4ss"
+}

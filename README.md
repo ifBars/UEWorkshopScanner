@@ -60,6 +60,17 @@ The scanner writes its report to standard output. Redirect it to keep a copy:
   --oodle-sha256 "<sha256>" > scan-result.json
 ```
 
+Integrations can select a supported game profile and write JSON directly:
+
+```powershell
+.\target\release\ue-workshop-scanner.exe "D:\path\to\WorkshopItem" `
+  --game meccha-chameleon `
+  --output ".\scan-result.json"
+```
+
+Run `ue-workshop-scanner --list-games` to see the profiles embedded in the
+current build.
+
 <details>
 <summary><strong>Bundled decoder builds and license acceptance</strong></summary>
 
@@ -69,7 +80,7 @@ terms:
 
 ```powershell
 .\ue-workshop-scanner.exe --licenses
-.\ue-workshop-scanner.exe "D:\path\to\WorkshopItem" --accept-eula
+.\ue-workshop-scanner.exe --accept-eula
 ```
 
 The CLI stores acceptance in your local configuration directory. Interactive
@@ -171,9 +182,9 @@ private Workshop items, or malware to the issue.
 
 ## Integration status
 
-Today, UEWorkshopScanner is a manual and automation-friendly CLI. A launcher
-can scan installed Workshop items before starting a game, and a companion app
-can watch for new or updated items.
+UEWorkshopScanner is a manual and automation-friendly CLI with a versioned JSON
+report and a reusable Rust API. A launcher can scan installed Workshop items
+before starting a game, and a companion app can watch for new or updated items.
 
 That is useful coverage, but it is not a guaranteed block for Meccha's
 in-lobby flow. When a player accepts a missing map, Steam downloads it and the
@@ -181,8 +192,10 @@ game may load it immediately. A filesystem watcher can lose that race. Reliable
 blocking requires a game-side integration that pauses between Steam reporting
 the item as downloaded and Unreal mounting or loading it.
 
-The proposed integration paths, trust boundaries, and staged roadmap are in
-[docs/integration.md](docs/integration.md).
+An observe-only Meccha UE4SS prototype can start scans from inside the game and
+collect hook candidates for the download-to-load boundary. It does not block
+maps yet. See the [integration prototype](integrations/meccha-ue4ss/README.md)
+and the broader [integration strategy](docs/integration.md).
 
 ## Build and contribute
 
@@ -207,6 +220,7 @@ src/
   lib.rs           crate root
   cli.rs           arguments, help, JSON output, and exit codes
   scanner.rs       scan orchestration
+  game_profile.rs  embedded game support metadata
   envelope.rs      Workshop directory and loose-file inspection
   container.rs     bounded IoStore reads through retoc
   markers.rs       ASCII and UTF-16 marker extraction
@@ -217,6 +231,10 @@ src/
   hashing.rs       streaming SHA-256 helpers
 tests/
   cli.rs           process-level CLI contract tests
+game-profiles/
+  meccha-chameleon.json
+integrations/
+  meccha-ue4ss/     Nexus and Thunderstore UE4SS prototype
 vendor/
   oodle_loader_safe/
 ```

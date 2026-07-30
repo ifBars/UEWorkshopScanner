@@ -22,11 +22,16 @@ and releases use [Semantic Versioning](https://semver.org/).
 - Process-level CLI contract tests.
 - Integration strategy for launchers, Workshop watchers, and game-side gates.
 - Structured issue form for requesting support for additional Unreal games.
+- Versioned report schema, public scanner facade, and embedded game profiles.
+- Direct JSON file output for launcher and in-game integrations.
+- Observe-only Meccha UE4SS prototype and Nexus/Thunderstore packaging.
 
 ### Changed
 
 - Split the CLI, scan orchestration, decoder boundary, and detection pipeline
   into library modules behind a thin binary entry point.
 - Updated both hashing paths to `sha2` 0.11.
+- Replaced process-environment Oodle configuration with a race-safe,
+  process-wide adapter API.
 
 [Unreleased]: https://github.com/ifBars/UEWorkshopScanner/commits/main
