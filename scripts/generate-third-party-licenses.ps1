@@ -22,6 +22,8 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "cargo-about failed with exit code $LASTEXITCODE."
     }
+    $generated = [System.IO.File]::ReadAllText($temporaryPath).TrimEnd() + "`n"
+    [System.IO.File]::WriteAllText($temporaryPath, $generated)
 
     if ($Check) {
         if (-not (Test-Path -LiteralPath $outputPath -PathType Leaf)) {
