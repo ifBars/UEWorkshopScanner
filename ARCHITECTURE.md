@@ -5,12 +5,19 @@ pipeline:
 
 ```mermaid
 flowchart LR
-    Containers[".utoc + .ucas"] --> Retoc["retoc / repak"]
+    Item["Workshop item directory or .utoc"] --> Envelope["Envelope inventory"]
+    Envelope --> Loose["Bounded loose-file reads"]
+    Envelope --> Containers[".utoc + .ucas"]
+    Containers --> Retoc["retoc / repak"]
     Oodle["Pinned Oodle decoder"] --> Retoc
     Retoc --> Chunks["Bounded parallel chunk reads"]
-    Chunks --> Markers["ASCII + UTF-16 marker extraction"]
-    Markers --> Rules["Per-asset behavior correlation"]
-    Rules --> Verdict["JSON report + process exit code"]
+    Loose --> Markers["Normalized markers"]
+    Chunks --> Markers
+    Markers --> Rules["Foundational behavior rules"]
+    Rules --> Families["Threat-family classifier"]
+    Families --> Disposition["Disposition classifier"]
+    Completeness["Independent completeness state"] --> Disposition
+    Disposition --> Verdict["JSON report + process exit code"]
 ```
 
 ## Container layer
@@ -35,15 +42,17 @@ reviewed digests in `src/main.rs`.
 
 ## Scan pipeline
 
-1. Validate the `.utoc` entry point and companion `.ucas`.
+1. Inventory a Workshop directory, or validate a direct `.utoc` input.
 2. Resolve and verify the Oodle decoder when required.
-3. Open the IoStore through retoc.
-4. Read and scan chunks in parallel through Rayon's bounded worker pool.
-5. Decode ASCII plus aligned and unaligned UTF-16LE/UTF-16BE text views.
-6. Assign normalized behavior markers.
-7. Correlate markers within each cooked asset into findings.
-8. Derive `allow`, `review`, `block`, or `incomplete`.
-9. Emit deterministic JSON and a verdict-specific process exit code.
+3. Inspect bounded loose files without loading or executing them.
+4. Open discovered IoStore containers through retoc.
+5. Read and scan chunks in parallel through Rayon's bounded worker pool.
+6. Decode ASCII plus aligned and unaligned UTF-16LE/UTF-16BE text views.
+7. Assign normalized behavior markers.
+8. Correlate markers within each artifact into foundational findings.
+9. Match finding combinations to named threat-family variants.
+10. Derive a final disposition separately from analysis completeness.
+11. Emit deterministic JSON and a verdict-specific process exit code.
 
 The collected chunk order is retained when parallel results are joined, so the
 same input produces stable artifact and finding order.
@@ -57,7 +66,7 @@ companion file, or unsupported container makes the run incomplete.
 The current implementation returns errors as exit code `4` and never converts a
 partial scan into `allow`.
 
-## Rule model
+## Detection model
 
 Rules are intentionally based on correlated behavior rather than isolated
 strings. For example:
@@ -67,6 +76,12 @@ strings. For example:
 - `powershell` in documentation is not a dropper.
 - automatic execution plus user-directory discovery, script output, shell
   launch, and downloader markers is a high-confidence chain.
+
+The pipeline follows the same layered principle as MLVScan: rules preserve
+low-level signals, threat intelligence groups those signals into named
+behavior variants, and disposition decides whether users should allow, review,
+or block. Analysis completeness remains independent so missing coverage cannot
+be mistaken for a clean result.
 
 This reduces obvious false positives while preserving useful evidence in the
 JSON report. It is still serialized-marker analysis, not full Kismet

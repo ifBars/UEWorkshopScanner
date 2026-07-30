@@ -5,9 +5,9 @@
 [![Rust](https://img.shields.io/badge/Rust-2024-orange.svg)](https://www.rust-lang.org/)
 
 UEWorkshopScanner is a local static malware scanner for Unreal Engine Workshop
-content. It opens UE5 IoStore packages in-process, scans cooked assets for
-correlated Blueprint behavior, and returns a machine-readable verdict before
-the add-on is loaded by a game.
+content. It scans the complete Workshop item envelope, opens UE5 IoStore
+packages in-process, correlates cooked-asset behavior, and returns a
+machine-readable disposition before the add-on is loaded by a game.
 
 The initial rules target the attack chain used in malicious
 [MECCHA CHAMELEON](https://store.steampowered.com/app/4704690/MECCHA_CHAMELEON/)
@@ -24,8 +24,11 @@ construction, hidden shell execution, and download behavior.
 - automatic `BeginPlay` behavior reaching file or URL operations;
 - writes into user-controlled directories, especially script extensions;
 - PowerShell and command-shell download-and-execute chains;
+- encoded commands, policy bypasses, Windows script hosts, and common LoLBins;
+- raw-IP payload endpoints;
 - JSON/batch polyglot construction;
 - hidden shell execution;
+- loose scripts/executables and disguised `MZ` files;
 - the documented Meccha Chameleon dropper behavior chain;
 - retained historical RCE fixture names.
 
@@ -37,10 +40,11 @@ Blueprint functions do not block a map by themselves.
 Windows archives will be published through
 [GitHub Releases](../../releases). Until the first archive is available, build
 the CLI from source as described below. Extract the entire archive, then scan a
-Workshop package through its `.utoc` entry point:
+Workshop item by selecting its directory (recommended) or a single `.utoc`
+entry point:
 
 ```powershell
-.\ue-workshop-scanner.exe "D:\path\to\WorkshopItem\Map-Windows.utoc"
+.\ue-workshop-scanner.exe "D:\path\to\WorkshopItem"
 ```
 
 The release archive keeps the scanner and its pinned Oodle decoder together.
@@ -71,6 +75,17 @@ Example:
 {
   "verdict": "block",
   "complete": true,
+  "disposition": {
+    "classification": "KnownThreat",
+    "primary_threat_family_id": "meccha-workshop-dropper"
+  },
+  "threat_families": [
+    {
+      "family_id": "meccha-workshop-dropper",
+      "variant_id": "blueprint-user-write-shell-download",
+      "confidence": 0.99
+    }
+  ],
   "chunks_seen": 2088,
   "chunks_scanned": 2088,
   "findings": [
@@ -90,7 +105,7 @@ Example:
 - no Unreal Engine or `UnrealPak.exe` requirement;
 - no extraction of scanned assets to disk;
 - exact Oodle redistributable hash allowlist;
-- configurable per-chunk size cap;
+- configurable per-file/chunk size cap;
 - incomplete analysis can never produce `allow`;
 - deterministic artifact and finding order;
 - Workshop packages, cooked assets, and malware samples are excluded from Git.
@@ -143,7 +158,8 @@ and residual licensing risk.
 
 ## Current limitations
 
-- UE5 IoStore `.utoc`/`.ucas` packages are the current end-user path.
+- UE5 IoStore and loose-file Workshop directories are the current end-user
+  path; legacy `.pak` contents are inventoried but not yet parsed.
 - Encrypted containers require an authorized key and are not currently
   supported.
 - Marker correlation does not yet reconstruct complete Kismet control flow.
@@ -156,9 +172,11 @@ and residual licensing risk.
 - [Workshop map for MECCHA CHAMELEON is a malware dropper](https://medium.com/@FeintBE/workshop-map-for-meccha-chameleon-is-a-malware-dropper-full-breakdown-d1ac29565265)
 - [The Meccha Chameleon Malware Incident](https://www.youtube.com/watch?v=RB9MrJ2fNqE)
 - [retoc](https://github.com/trumank/retoc)
+- [UE Map Guardian](https://github.com/PotateBulle/UE-Map-Guardian), whose
+  loose-file coverage and Windows command indicators informed this iteration.
 
-No malicious sample, private Workshop package, or proprietary Unreal asset is
-included in this repository.
+No source code was copied from UE Map Guardian. No malicious sample, private
+Workshop package, or proprietary Unreal asset is included in this repository.
 
 ## Contributing and security
 

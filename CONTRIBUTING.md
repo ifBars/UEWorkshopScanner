@@ -28,6 +28,11 @@ New blocking rules should:
 6. return `incomplete` instead of `allow` when required evidence cannot be
    inspected.
 
+Keep the detection layers separate: byte markers belong in `markers.rs`,
+correlated low-level findings in `rules.rs`, named behavior variants in
+`threat_intel.rs`, and input/parser coverage failures in the completeness
+model. Do not teach a primitive rule to make the final product verdict.
+
 ## Samples and licensed files
 
 Never commit:

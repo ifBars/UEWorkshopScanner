@@ -33,4 +33,13 @@ header does not imply benign behavior.
 The scanner blocks only high-confidence combinations such as an automatic
 external file-write chain, a local file-launch chain, or a shell downloader.
 Individual dual-use Blueprint functions produce a review result rather than a
-block.
+block. A dangerous loose-file type is independently blocking because Workshop
+map content has no legitimate need to deliver Windows scripts or executables.
+
+## Completeness policy
+
+Completeness is not a threat classification. Missing companions, skipped
+symlinks, oversized items, read errors, container failures, and a directory
+without an IoStore entry point are recorded as structured reasons. Unless a
+stronger blocking finding exists, any such reason yields `incomplete`, never
+`allow`.
