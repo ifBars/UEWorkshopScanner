@@ -1,6 +1,6 @@
 [package]
 name = "ue-workshop-scanner"
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.3"
 edition = "2024"
 rust-version = "1.88"
 license = "MIT"
@@ -23,3 +23,8 @@ sha2 = "0.11.0"
 
 [patch."https://github.com/trumank/repak.git"]
 oodle_loader = { path = "vendor/oodle_loader_safe" }
+
+[workspace]
+members = [".", "gui"]
+default-members = ["."]
+resolver = "2"

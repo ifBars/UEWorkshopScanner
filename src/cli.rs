@@ -84,6 +84,7 @@ pub(crate) fn run(args: Vec<OsString>) -> Result<i32> {
         game_profile: selected_profile,
         oodle_decoder,
         accept_bundled_eula: options.accept_eula,
+        require_oodle_decoder: false,
     })?;
     let report = scanner.scan(&options.input)?;
     let exit_code = match report.verdict {

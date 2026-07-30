@@ -15,9 +15,8 @@ $approvedOodleSha256 = @(
     "111a505e64a3bf1b89c05aab2dd16306bc2267a5ea3f0c9722a3b6152091ce1c"
 )
 $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
-$rustRoot = $projectRoot
 $outputRoot = [System.IO.Path]::GetFullPath($OutputDirectory)
-$archiveName = "UEWorkshopScanner-$Version-cli-windows-x64"
+$archiveName = "UEWorkshopScanner-$Version-desktop-windows-x64"
 $stageRoot = Join-Path $outputRoot $archiveName
 $archivePath = Join-Path $outputRoot "$archiveName.zip"
 
@@ -26,11 +25,11 @@ if ($actualOodleSha256 -notin $approvedOodleSha256) {
     throw "Oodle digest mismatch. The supplied DLL is not an approved Epic Oodle 2.9.10 redistributable; got $actualOodleSha256."
 }
 
-Push-Location $rustRoot
+Push-Location $projectRoot
 try {
-    cargo build --locked --release
+    cargo build --locked --release -p ue-workshop-scanner-gui
     if ($LASTEXITCODE -ne 0) {
-        throw "cargo build failed with exit code $LASTEXITCODE."
+        throw "GUI release build failed with exit code $LASTEXITCODE."
     }
 }
 finally {
@@ -46,15 +45,20 @@ if (Test-Path -LiteralPath $archivePath) {
 }
 New-Item -ItemType Directory -Path $stageRoot | Out-Null
 
-Copy-Item -LiteralPath (Join-Path $rustRoot "target\release\ue-workshop-scanner.exe") -Destination $stageRoot
+Copy-Item -LiteralPath (Join-Path $projectRoot "target\release\ue-workshop-scanner-gui.exe") `
+    -Destination (Join-Path $stageRoot "UEWorkshopScanner.exe")
 Copy-Item -LiteralPath $OodlePath -Destination (Join-Path $stageRoot "oo2core_9_win64.dll")
-Copy-Item -LiteralPath (Join-Path $projectRoot "BINARY-EULA.txt") -Destination $stageRoot
-Copy-Item -LiteralPath (Join-Path $projectRoot "EXPERIMENTAL.txt") -Destination $stageRoot
-Copy-Item -LiteralPath (Join-Path $projectRoot "THIRD_PARTY_NOTICES.txt") -Destination $stageRoot
-Copy-Item -LiteralPath (Join-Path $projectRoot "THIRD_PARTY_LICENSES.txt") -Destination $stageRoot
-Copy-Item -LiteralPath (Join-Path $projectRoot "LICENSE") -Destination $stageRoot
-Copy-Item -LiteralPath (Join-Path $projectRoot "README.md") -Destination $stageRoot
-Copy-Item -LiteralPath (Join-Path $projectRoot "SECURITY.md") -Destination $stageRoot
+Copy-Item -LiteralPath (Join-Path $projectRoot "gui\README-FIRST.txt") -Destination $stageRoot
+foreach ($file in @(
+    "BINARY-EULA.txt",
+    "EXPERIMENTAL.txt",
+    "THIRD_PARTY_NOTICES.txt",
+    "THIRD_PARTY_LICENSES.txt",
+    "LICENSE",
+    "SECURITY.md"
+)) {
+    Copy-Item -LiteralPath (Join-Path $projectRoot $file) -Destination $stageRoot
+}
 
 $hashLines = Get-ChildItem -LiteralPath $stageRoot -File |
     Sort-Object Name |
@@ -66,7 +70,10 @@ $hashLines = Get-ChildItem -LiteralPath $stageRoot -File |
 
 Compress-Archive -LiteralPath $stageRoot -DestinationPath $archivePath -CompressionLevel Optimal
 $archiveSha256 = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
-[System.IO.File]::WriteAllText("$archivePath.sha256", "$archiveSha256  $([System.IO.Path]::GetFileName($archivePath))`n")
+[System.IO.File]::WriteAllText(
+    "$archivePath.sha256",
+    "$archiveSha256  $([System.IO.Path]::GetFileName($archivePath))`n"
+)
 
 Write-Host "Created $archivePath"
 Write-Host "SHA-256 $archiveSha256"

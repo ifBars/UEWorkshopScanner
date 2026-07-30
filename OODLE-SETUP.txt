@@ -21,5 +21,9 @@ Then scan with both explicit arguments:
 The scanner performs no decoder download and refuses a digest mismatch.
 Do not obtain Oodle from DLL download sites, unrelated games, or mirrors.
 
+For the decoder-free desktop GUI artifact, copy the authorized DLL beside
+UEWorkshopScanner.exe using the exact filename oo2core_9_win64.dll. Start the
+app and review the complete bundled-binary terms shown during one-time setup.
+
 The complete GitHub pre-release ZIP includes the approved decoder, binary EULA,
 notices, and one-time acceptance flow instead.

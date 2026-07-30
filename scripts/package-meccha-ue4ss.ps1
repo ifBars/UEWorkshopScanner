@@ -8,7 +8,7 @@ param(
     [ValidateScript({ Test-Path -LiteralPath $_ -PathType Container })]
     [string] $Ue4ssOverlayPath,
 
-    [string] $Version = "0.1.0-alpha.2",
+    [string] $Version = "0.1.0-alpha.3",
 
     [string] $OutputDirectory = (Join-Path $PSScriptRoot "..\artifacts\meccha-ue4ss")
 )

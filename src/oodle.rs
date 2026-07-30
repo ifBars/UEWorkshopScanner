@@ -15,10 +15,15 @@ const BINARY_EULA: &str = include_str!("../BINARY-EULA.txt");
 const PROJECT_LICENSE: &str = include_str!("../LICENSE");
 const THIRD_PARTY_NOTICES: &str = include_str!("../THIRD_PARTY_NOTICES.txt");
 
+pub(crate) fn binary_eula_text() -> &'static str {
+    BINARY_EULA
+}
+
 pub(crate) fn configure(
     explicit_path: Option<&Path>,
     expected_digest: Option<&str>,
     accept_eula: bool,
+    require_decoder: bool,
 ) -> Result<()> {
     match (explicit_path, expected_digest) {
         (Some(path), Some(digest)) => {
@@ -39,6 +44,13 @@ pub(crate) fn configure(
                 }
                 configure_decoder(&bundled, &actual)?;
                 ensure_bundled_eula_accepted(accept_eula)?;
+            } else if require_decoder {
+                bail!(
+                    "Oodle is required for this scan, but {BUNDLED_OODLE_FILE} was not found beside {}",
+                    std::env::current_exe()
+                        .context("could not resolve the scanner executable path")?
+                        .display()
+                );
             }
             Ok(())
         }
@@ -53,7 +65,7 @@ pub(crate) fn accept_bundled_eula() -> Result<()> {
     if !bundled.is_file() {
         bail!("no bundled {BUNDLED_OODLE_FILE} was found beside the scanner executable");
     }
-    configure(None, None, true)
+    configure(None, None, true, true)
 }
 
 pub(crate) fn bundled_eula_is_accepted() -> Result<bool> {
@@ -80,7 +92,7 @@ pub(crate) fn verify_bundled_distribution(accept_eula: bool) -> Result<()> {
             bundled.display()
         );
     }
-    configure(None, None, accept_eula)
+    configure(None, None, accept_eula, true)
 }
 
 fn verify_decoder(path: &Path, expected_digest: Option<&str>) -> Result<String> {

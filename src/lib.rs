@@ -4,6 +4,7 @@ mod envelope;
 pub mod game_profile;
 mod hashing;
 mod integration_setup;
+pub mod licensing;
 mod markers;
 pub mod model;
 mod notification;

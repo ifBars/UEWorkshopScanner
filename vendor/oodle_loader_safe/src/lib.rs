@@ -219,7 +219,7 @@ fn load_oodle() -> Result<Oodle> {
     }
 
     let expected = &config.digest;
-    let bytes = std::fs::read(&path)?;
+    let bytes = std::fs::read(path)?;
     let found = hex::encode(Sha256::digest(&bytes));
     if expected != &found {
         return Err(Error::HashMismatch {

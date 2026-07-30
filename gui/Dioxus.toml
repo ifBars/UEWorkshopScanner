@@ -1,0 +1,14 @@
+[application]
+name = "UEWorkshopScanner"
+
+[bundle]
+identifier = "com.ifbars.ueworkshopscanner"
+publisher = "ifBars"
+category = "Utility"
+
+[web.app]
+title = "UEWorkshopScanner"
+
+[web.watcher]
+reload_html = true
+watch_path = ["src", "assets"]

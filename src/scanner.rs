@@ -37,6 +37,12 @@ pub struct ScannerOptions {
     pub game_profile: Option<GameProfile>,
     pub oodle_decoder: Option<OodleDecoder>,
     pub accept_bundled_eula: bool,
+    /// Require an approved Oodle decoder to be ready before scanning.
+    ///
+    /// Player-facing integrations should enable this for games whose IoStore
+    /// content is Oodle-compressed. Failing early prevents the process-wide
+    /// decoder from caching an unconfigured initialization attempt.
+    pub require_oodle_decoder: bool,
 }
 
 impl Default for ScannerOptions {
@@ -46,6 +52,7 @@ impl Default for ScannerOptions {
             game_profile: None,
             oodle_decoder: None,
             accept_bundled_eula: false,
+            require_oodle_decoder: false,
         }
     }
 }
@@ -65,6 +72,7 @@ impl Scanner {
             decoder.map(|value| value.path.as_path()),
             decoder.map(|value| value.sha256.as_str()),
             options.accept_bundled_eula,
+            options.require_oodle_decoder,
         )?;
         Ok(Self { options })
     }

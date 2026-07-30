@@ -19,7 +19,7 @@ jobs:
         uses: dtolnay/rust-toolchain@1.88.0
 
       - name: Check all targets
-        run: cargo check --locked --all-targets
+        run: cargo check --workspace --locked --all-targets
 
   test:
     name: Format, test, and lint
@@ -40,10 +40,10 @@ jobs:
         run: ./scripts/test-meccha-package.ps1
 
       - name: Run tests
-        run: cargo test --locked
+        run: cargo test --workspace --locked
 
       - name: Run Clippy
-        run: cargo clippy --locked --all-targets -- -D warnings
+        run: cargo clippy --workspace --locked --all-targets -- -D warnings
 
   artifact:
     name: Experimental Windows artifact
@@ -69,6 +69,15 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Upload experimental desktop GUI
+        id: upload-gui
+        uses: actions/upload-artifact@v7
+        with:
+          name: UEWorkshopScanner-desktop-experimental-windows-x64-${{ github.run_number }}
+          path: artifacts/ci/UEWorkshopScanner-desktop-experimental-windows-x64/
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Add download to job summary
         shell: pwsh
         run: |
@@ -76,3 +85,8 @@ jobs:
           "[Download artifact](${{ steps.upload.outputs.artifact-url }})" >> $env:GITHUB_STEP_SUMMARY
           "" >> $env:GITHUB_STEP_SUMMARY
           "Decoder-free build: supply an authorized Oodle DLL as described in OODLE-SETUP.txt." >> $env:GITHUB_STEP_SUMMARY
+          "" >> $env:GITHUB_STEP_SUMMARY
+          "### Experimental Windows desktop GUI" >> $env:GITHUB_STEP_SUMMARY
+          "[Download artifact](${{ steps.upload-gui.outputs.artifact-url }})" >> $env:GITHUB_STEP_SUMMARY
+          "" >> $env:GITHUB_STEP_SUMMARY
+          "Decoder-free build: place an authorized Oodle DLL beside UEWorkshopScanner.exe." >> $env:GITHUB_STEP_SUMMARY

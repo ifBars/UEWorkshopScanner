@@ -20,19 +20,36 @@ contact a remote service, or execute files found inside a Workshop item.
 
 ## Download
 
-For the easiest setup, download the complete Windows ZIP from the
-[experimental release](https://github.com/ifBars/UEWorkshopScanner/releases/tag/v0.1.0-alpha.2).
-It contains the scanner and the files needed to read compressed Unreal Engine
-content.
+For the easiest setup, download the `desktop-windows-x64` ZIP from the
+[experimental release](https://github.com/ifBars/UEWorkshopScanner/releases/tag/v0.1.0-alpha.3).
+It contains a simple desktop app and the files needed to read compressed Unreal
+Engine content. No command-line setup is required.
 
-The included Oodle decoder has separate Epic Games terms. After extracting the
-ZIP, review `BINARY-EULA.txt` before accepting those terms.
+The included Oodle decoder has separate Epic Games terms. The desktop app shows
+the complete terms during one-time setup and does not activate the decoder
+until you accept them.
 
 Advanced testers can download a newer decoder-free build from the
 [latest successful GitHub Actions run](https://github.com/ifBars/UEWorkshopScanner/actions/workflows/ci.yml?query=branch%3Amain+is%3Asuccess).
 That build requires your own authorized Oodle decoder.
 
 ## Scan a MECCHA CHAMELEON map
+
+### Desktop app
+
+1. Extract the complete desktop ZIP.
+2. Start `UEWorkshopScanner.exe`.
+3. Review the one-time bundled-binary terms.
+4. Drop a Workshop map folder onto the window, or select **Browse for folder**.
+5. Select **Scan this map** and follow the displayed recommendation.
+
+Meccha maps are normally stored here:
+
+```text
+<SteamLibrary>\steamapps\workshop\content\4704690\<WorkshopItemId>
+```
+
+### Command-line scanner
 
 1. Extract the downloaded ZIP.
 2. Open the extracted folder in Windows Terminal.
@@ -44,12 +61,6 @@ That build requires your own authorized Oodle decoder.
 ```
 
 4. Find the Workshop map you want to scan.
-
-Meccha maps are normally stored here:
-
-```text
-<SteamLibrary>\steamapps\workshop\content\4704690\<WorkshopItemId>
-```
 
 5. Run the scanner with the map folder:
 
@@ -225,9 +236,9 @@ Run the same checks used by CI:
 
 ```powershell
 cargo fmt --check
-cargo test --locked
-cargo clippy --locked --all-targets -- -D warnings
-cargo +1.88.0 check --locked --all-targets
+cargo test --workspace --locked
+cargo clippy --workspace --locked --all-targets -- -D warnings
+cargo +1.88.0 check --workspace --locked --all-targets
 ```
 
 When `Cargo.lock` changes, install
