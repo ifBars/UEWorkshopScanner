@@ -3,16 +3,19 @@
 This is an early UE4SS integration for
 [UEWorkshopScanner](https://github.com/ifBars/UEWorkshopScanner).
 
-Press `Ctrl+Shift+F8` in game to scan every currently installed MECCHA
-CHAMELEON Workshop item. Reports are written to the mod's `reports` directory.
+No hotkeys or manual activation are required. The integration installs its
+Workshop mount gate automatically when the game starts. If Meccha's reflected
+mount function is not available yet, it retries in the background until the
+gate is active and then stops retrying.
 
-Press `Ctrl+Shift+F9` to write a diagnostic list of reflected Unreal functions
-whose names may be related to Workshop downloads, mounting, or map travel.
-This can briefly pause the game while UE4SS walks the object registry.
+The integration holds Meccha's IoStore mount while the external scanner checks
+the individual Workshop item. A clean result releases the mount. A block,
+review, incomplete scan, or scanner error keeps the content from mounting,
+closes the game to stop its retry loop, and displays a native Windows warning
+with the Workshop item ID, decision, and report path.
 
-> This prototype observes and scans; it does **not** block a map from loading
-> yet. Reliable blocking needs a tested hook between Steam finishing a Workshop
-> download and the game mounting or traveling to that map.
+> Enforcement is experimental. Only use it with the documented supported game
+> and UE4SS versions.
 
 The bundled scanner may require one-time acceptance of its binary terms before
 the integration can run. Open a terminal in `UEWorkshopScanner/bin`, run

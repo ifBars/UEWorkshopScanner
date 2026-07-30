@@ -19,3 +19,4 @@ target/
 *.uheader
 *.umap
 AssetRegistry.bin
+docs/meccha-ue4ss-runtime.md

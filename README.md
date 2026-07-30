@@ -2,50 +2,178 @@
 
 [![CI](https://github.com/ifBars/UEWorkshopScanner/actions/workflows/ci.yml/badge.svg)](https://github.com/ifBars/UEWorkshopScanner/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Rust](https://img.shields.io/badge/Rust-2024-orange.svg)](https://www.rust-lang.org/)
 
-UEWorkshopScanner is a static malware scanner for Unreal Engine Workshop
-content. It reads UE5 IoStore packages in-process, inspects loose files, and
-returns a JSON verdict that launchers, mod managers, and game integrations can
-act on.
+Scan Unreal Engine Workshop maps for known malware behavior before they load.
 
-I started this after malicious
+I started UEWorkshopScanner after malicious
 [MECCHA CHAMELEON](https://store.steampowered.com/app/4704690/MECCHA_CHAMELEON/)
-maps used Blueprint logic to write and launch a malware downloader. Meccha is
-the first supported target, not the limit of the project. The scanner is
-designed to add other Unreal games and threat families as we learn their
-Workshop layouts and obtain safe, representative fixtures.
+maps used Blueprint code to download and run malware. Meccha is the first
+supported game, with more Unreal Engine games planned as the project grows.
 
-[Meccha Chameleon 3.1.0](https://steamcommunity.com/ogg/4704690/announcements/detail/680756685198854754)
-added a security patch for MOD maps. This scanner is additional defense for
-Meccha and a foundation for protecting other Unreal Workshop ecosystems.
+The scanner runs entirely on your computer. It does not upload your maps,
+contact a remote service, or execute files found inside a Workshop item.
 
-> [!IMPORTANT]
-> All downloads are experimental. An `allow` verdict is not proof that a
-> Workshop item is safe. The current CLI also does not intercept a game or
-> Steam download automatically.
+> [!WARNING]
+> UEWorkshopScanner is experimental. A clean result reduces risk, but it cannot
+> prove that a Workshop item is safe. Keep Windows Security or another
+> antivirus enabled.
 
-## Experimental downloads
+## Download
 
-Choose the package that matches how you want to test:
+For the easiest setup, download the complete Windows ZIP from the
+[experimental release](https://github.com/ifBars/UEWorkshopScanner/releases/tag/v0.1.0-alpha.1).
+It contains the scanner and the files needed to read compressed Unreal Engine
+content.
 
-| Download | Contents | Oodle setup |
-| --- | --- | --- |
-| [GitHub pre-release](https://github.com/ifBars/UEWorkshopScanner/releases/tag/v0.1.0-alpha.1) | Complete Windows ZIP with the CLI, approved Oodle decoder, binary EULA, notices, and checksums | Review `BINARY-EULA.txt`, run `--licenses`, then `--accept-eula` |
-| [Latest successful GitHub Actions run](https://github.com/ifBars/UEWorkshopScanner/actions/workflows/ci.yml?query=branch%3Amain+is%3Asuccess) | Decoder-free Windows CLI artifact retained for 30 days | Supply your own authorized decoder using `--oodle-path` and `--oodle-sha256` |
+The included Oodle decoder has separate Epic Games terms. After extracting the
+ZIP, review `BINARY-EULA.txt` before accepting those terms.
 
-The Actions artifact is built entirely from the public repository and does not
-contain Epic Games Licensed Technology. Read its `EXPERIMENTAL.txt` and
-`OODLE-SETUP.txt` before testing.
+Advanced testers can download a newer decoder-free build from the
+[latest successful GitHub Actions run](https://github.com/ifBars/UEWorkshopScanner/actions/workflows/ci.yml?query=branch%3Amain+is%3Asuccess).
+That build requires your own authorized Oodle decoder.
 
-The pre-release ZIP is the easier path for most testers, but it is still
-experimental software. Its bundled decoder is governed by the included binary
-terms and the Unreal Engine EULA, not the project's MIT License.
+## Scan a MECCHA CHAMELEON map
 
-## Quick start
+1. Extract the downloaded ZIP.
+2. Open the extracted folder in Windows Terminal.
+3. Review and accept the included binary terms:
 
-You need Rust 1.88 or newer. Oodle-compressed content also needs an authorized
-Oodle Data 2.9.10 Windows decoder.
+```powershell
+.\ue-workshop-scanner.exe --licenses
+.\ue-workshop-scanner.exe --accept-eula
+```
+
+4. Find the Workshop map you want to scan.
+
+Meccha maps are normally stored here:
+
+```text
+<SteamLibrary>\steamapps\workshop\content\4704690\<WorkshopItemId>
+```
+
+5. Run the scanner with the map folder:
+
+```powershell
+.\ue-workshop-scanner.exe "D:\SteamLibrary\steamapps\workshop\content\4704690\1234567890" `
+  --game meccha-chameleon `
+  --summary
+```
+
+Replace the example path and Workshop ID with the map on your computer.
+
+### Understand the result
+
+The first line gives the simplest answer:
+
+```text
+block: no
+verdict: allow
+complete: yes
+message: No known malicious behavior was detected
+rules triggered: none
+```
+
+| Result | What to do |
+| --- | --- |
+| `allow` | No current rule matched. You can continue, but normal caution still applies. |
+| `review` | Do not open the map until someone has reviewed the report. |
+| `block` | Remove or unsubscribe from the map. Do not open it. |
+| `incomplete` | The scanner could not inspect everything. Treat the map as blocked. |
+
+Use `--output scan-result.txt` to save the summary:
+
+```powershell
+.\ue-workshop-scanner.exe "D:\path\to\WorkshopItem" `
+  --game meccha-chameleon `
+  --summary `
+  --output ".\scan-result.txt"
+```
+
+## Automatic protection for Meccha
+
+I'm currently testing an experimental UE4SS integration for Nexus Mods and
+Thunderstore. It watches Meccha's map-loading path and scans each Workshop item
+before Unreal Engine mounts it.
+
+- Clean maps continue loading after the scan.
+- Suspicious or incomplete maps remain blocked.
+- If Meccha cannot safely cancel the host's map request, the integration closes
+  the game before the map loads.
+- A Windows warning explains what happened and shows where the scan report was
+  saved.
+- Protection starts automatically. There are no hotkeys to press.
+
+The automatic integration is not included in the current public alpha release
+yet. Its source and current testing notes are available in the
+[Meccha UE4SS integration folder](integrations/meccha-ue4ss/README.md).
+
+## What the scanner checks
+
+UEWorkshopScanner looks for behavior used by the documented Meccha malware
+dropper, including:
+
+- Blueprint code that runs automatically and writes files;
+- PowerShell or command-shell download chains;
+- encoded commands and policy bypasses;
+- scripts or executables hidden inside a Workshop item;
+- files disguised with an incorrect extension;
+- suspicious combinations of file writes, URLs, and process launches.
+
+A single word such as `PowerShell` or a normal `BeginPlay` event does not block
+a map by itself. Blocking rules require related behavior in the same asset.
+
+## What it does not do
+
+UEWorkshopScanner does not:
+
+- run the map, its scripts, or bundled executables;
+- start Unreal Engine or `UnrealPak.exe`;
+- upload the map or scan report;
+- replace your antivirus;
+- inspect encrypted containers without an authorized key;
+- fully inspect legacy `.pak` content yet.
+
+The scanner currently supports UE5 IoStore content stored in `.utoc` and
+`.ucas` files. It also checks loose files placed beside those containers.
+
+## Frequently asked questions
+
+### Why did my game close?
+
+The automatic Meccha integration closes the game only when it cannot safely
+allow a map to load. A warning should show the Workshop item ID, the result,
+and the saved report path.
+
+### Does an allow result mean the map is safe?
+
+No. It means the scan completed and no current rule matched. New techniques,
+encrypted content, parser limitations, or native-code attacks may not be
+detected.
+
+### Does the scanner need administrator access?
+
+No. Run it as your normal Windows user.
+
+### Does it send my Workshop maps anywhere?
+
+No. Scanning is local, and the CLI has no network client.
+
+### Can I request support for another game?
+
+Yes. Open a
+[game-support request](https://github.com/ifBars/UEWorkshopScanner/issues/new?template=game-support.yml)
+with the game name, Steam App ID, Unreal Engine version if known, and a
+description of its mod format.
+
+Do not upload private maps, proprietary game files, decryption keys, or malware
+to a public issue.
+
+## For developers and contributors
+
+<details>
+<summary>Build from source</summary>
+
+Install Rust 1.88 or newer:
 
 ```powershell
 git clone https://github.com/ifBars/UEWorkshopScanner.git
@@ -53,198 +181,43 @@ cd UEWorkshopScanner
 cargo build --locked --release
 ```
 
-Scan the entire Workshop item directory when possible:
+Source builds do not download or include Oodle. Supply an authorized decoder
+and its SHA-256 digest when scanning compressed content:
 
 ```powershell
 .\target\release\ue-workshop-scanner.exe "D:\path\to\WorkshopItem" `
   --oodle-path "D:\path\to\oo2core_9_win64.dll" `
-  --oodle-sha256 "<sha256>"
-```
-
-You can also scan one IoStore entry point:
-
-```powershell
-.\target\release\ue-workshop-scanner.exe "D:\path\to\Map-Windows.utoc" `
-  --oodle-path "D:\path\to\oo2core_9_win64.dll" `
-  --oodle-sha256 "<sha256>"
-```
-
-The scanner writes its report to standard output. Redirect it to keep a copy:
-
-```powershell
-.\target\release\ue-workshop-scanner.exe "D:\path\to\WorkshopItem" `
-  --oodle-path "D:\path\to\oo2core_9_win64.dll" `
-  --oodle-sha256 "<sha256>" > scan-result.json
-```
-
-Integrations can select a supported game profile and write JSON directly:
-
-```powershell
-.\target\release\ue-workshop-scanner.exe "D:\path\to\WorkshopItem" `
-  --game meccha-chameleon `
-  --output ".\scan-result.json"
-```
-
-Run `ue-workshop-scanner --list-games` to see the profiles embedded in the
-current build.
-
-For a concise answer intended for a person rather than another tool, use
-summary output:
-
-```powershell
-.\ue-workshop-scanner.exe "D:\path\to\WorkshopItem" `
+  --oodle-sha256 "<sha256>" `
   --game meccha-chameleon `
   --summary
 ```
 
-```text
-block: yes
-verdict: block
-complete: yes
-message: Likely malware detected
-threat family: meccha-workshop-dropper
-rules triggered: 2
-- UWS103 [critical] Automatic Blueprint logic writes outside the game content area
-  location: Content/Example.uasset
-- UWS108 [critical] Meccha Chameleon Blueprint dropper behavior chain
-  location: Content/Example.uasset
-```
-
-`--format summary` is the long form of `--summary`. Combine either with
-`--output summary.txt` to save the result. JSON remains the default for scripts
-and integrations.
+</details>
 
 <details>
-<summary><strong>Bundled decoder builds and license acceptance</strong></summary>
+<summary>Machine-readable reports</summary>
 
-Complete Windows pre-release archives keep the scanner and an approved Oodle
-decoder together. The first run will ask you to review and accept the binary
-terms:
+JSON is the default output for launchers, mod managers, and game integrations:
 
 ```powershell
-.\ue-workshop-scanner.exe --licenses
-.\ue-workshop-scanner.exe --accept-eula
+.\ue-workshop-scanner.exe "D:\path\to\WorkshopItem" `
+  --game meccha-chameleon `
+  --output ".\scan-result.json"
 ```
 
-The CLI stores acceptance in your local configuration directory. Interactive
-runs prompt when you have not accepted the terms yet.
+Exit codes are stable:
 
-The source build never downloads a decoder. When you provide one manually, the
-CLI requires its SHA-256 digest and refuses a mismatch.
+| Verdict | Exit code |
+| --- | ---: |
+| `allow` | 0 |
+| `review` | 2 |
+| `block` | 3 |
+| `incomplete` or scanner error | 4 |
 
 </details>
 
-## Read the result
-
-| Verdict | Exit code | Meaning |
-| --- | ---: | --- |
-| `allow` | 0 | The scan completed and no current rule matched |
-| `review` | 2 | Dual-use or suspicious behavior needs review |
-| `block` | 3 | A high-confidence malicious behavior chain matched |
-| `incomplete` | 4 | The scanner could not inspect everything safely |
-
-The report keeps completeness separate from threat classification. A missing
-container, skipped file, parser failure, or oversized item can never become
-`allow`.
-
-In summary mode, `block` follows the final disposition rather than the presence
-of an individual rule. An incomplete scan therefore reports `block: yes` even
-when `rules triggered: none`.
-
-```json
-{
-  "verdict": "block",
-  "complete": true,
-  "disposition": {
-    "classification": "KnownThreat",
-    "primary_threat_family_id": "meccha-workshop-dropper"
-  },
-  "threat_families": [
-    {
-      "family_id": "meccha-workshop-dropper",
-      "variant_id": "blueprint-user-write-shell-download",
-      "confidence": 0.99
-    }
-  ]
-}
-```
-
-## What it checks
-
-UEWorkshopScanner currently looks for:
-
-- automatic Blueprint execution tied to file writes or URL launches;
-- writes into user-controlled directories, especially script files;
-- PowerShell and command-shell download-and-execute chains;
-- encoded commands, policy bypasses, script hosts, and common Windows LoLBins;
-- raw-IP payload URLs and hidden execution;
-- JSON/batch polyglot construction;
-- loose scripts, executables, and files with disguised `MZ` headers;
-- the documented Meccha Chameleon Workshop dropper family.
-
-Rules correlate behavior inside the same artifact. A normal `BeginPlay`,
-`ToFile`, or `powershell` string does not block a map by itself.
-
-## Safety model
-
-The scanner does not start Unreal Engine, run `UnrealPak.exe`, extract cooked
-assets, execute scripts, or load executables found in a Workshop item.
-
-It also has no network client. The patched Oodle adapter cannot download native
-code and accepts only an explicit decoder path with a matching digest.
-
-The container parser and native decoder still process attacker-controlled
-bytes. A future desktop app should run this CLI as a disposable,
-resource-limited process without administrator access or network access.
-
-Read the [threat model](docs/threat-model.md) and
-[architecture](docs/architecture.md) for the full boundary.
-
-## Current coverage
-
-- The scanner supports UE5 IoStore directories and direct `.utoc`/`.ucas`
-  inputs.
-- The scanner inspects loose Workshop files without executing them.
-- The scanner inventories legacy `.pak` files but does not parse them yet.
-- Encrypted containers need an authorized key and are not supported.
-- Detection uses serialized markers and correlation, not full Kismet
-  control-flow reconstruction.
-- Native plugins, UE4SS mods, and DLL injection chains are outside the current
-  scope.
-
-### Game support
-
-Meccha Chameleon is the initial target. Its Workshop items use Steam App ID
-`4704690`, and the current threat-family rules cover the documented Meccha
-Blueprint dropper chain.
-
-Support for another Unreal game needs more than adding its name. We need to
-confirm its Unreal version, Workshop directory and container layout,
-compression requirements, safe test fixtures, and the point where the game
-mounts downloaded content.
-
-[Open a game-support request](https://github.com/ifBars/UEWorkshopScanner/issues/new?template=game-support.yml)
-if you can provide that information. Do not upload proprietary game files,
-private Workshop items, or malware to the issue.
-
-## Integration status
-
-UEWorkshopScanner is a manual and automation-friendly CLI with a versioned JSON
-report and a reusable Rust API. A launcher can scan installed Workshop items
-before starting a game, and a companion app can watch for new or updated items.
-
-That is useful coverage, but it is not a guaranteed block for Meccha's
-in-lobby flow. When a player accepts a missing map, Steam downloads it and the
-game may load it immediately. A filesystem watcher can lose that race. Reliable
-blocking requires a game-side integration that pauses between Steam reporting
-the item as downloaded and Unreal mounting or loading it.
-
-An observe-only Meccha UE4SS prototype can start scans from inside the game and
-collect hook candidates for the download-to-load boundary. It does not block
-maps yet. See the [integration prototype](integrations/meccha-ue4ss/README.md)
-and the broader [integration strategy](docs/integration.md).
-
-## Build and contribute
+<details>
+<summary>Contributing</summary>
 
 Run the same checks used by CI:
 
@@ -255,64 +228,14 @@ cargo clippy --locked --all-targets -- -D warnings
 cargo +1.88.0 check --locked --all-targets
 ```
 
-The package uses Cargo's standard library-plus-binary layout. `src/main.rs` is
-only the process entry point; the scanner lives in testable library modules.
-
-<details>
-<summary><strong>Source layout</strong></summary>
-
-```text
-src/
-  main.rs          process entry point
-  lib.rs           crate root
-  cli.rs           arguments, help, JSON output, and exit codes
-  scanner.rs       scan orchestration
-  game_profile.rs  embedded game support metadata
-  envelope.rs      Workshop directory and loose-file inspection
-  container.rs     bounded IoStore reads through retoc
-  markers.rs       ASCII and UTF-16 marker extraction
-  rules.rs         foundational behavior findings
-  threat_intel.rs  threat-family and disposition classification
-  model.rs         report and evidence types
-  oodle.rs         decoder verification and binary license flow
-  hashing.rs       streaming SHA-256 helpers
-tests/
-  cli.rs           process-level CLI contract tests
-game-profiles/
-  meccha-chameleon.json
-integrations/
-  meccha-ue4ss/     Nexus and Thunderstore UE4SS prototype
-vendor/
-  oodle_loader_safe/
-```
-
-</details>
-
 New blocking rules need an inert positive test, a benign negative test, and a
 documented behavior chain. Do not commit malware, private Workshop maps,
 proprietary Unreal assets, Oodle binaries, or decryption keys.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) before changing rules, parser behavior,
-or completeness handling.
-
-<details>
-<summary><strong>Release packaging</strong></summary>
-
-Maintainers can build a Windows archive from an approved local Epic
-redistributable:
-
-```powershell
-.\scripts\package-windows-release.ps1 `
-  -OodlePath "D:\path\to\Epic\win\redist\oo2core_9_win64.dll" `
-  -Version "0.1.0"
-```
-
-The packager performs no downloads. It verifies the decoder, builds with
-`Cargo.lock`, includes the required terms and notices, and writes SHA-256
-checksums.
-
-Read the [Oodle distribution assessment](docs/oodle-distribution.md) before
-publishing a binary.
+Read [CONTRIBUTING.md](CONTRIBUTING.md), the
+[architecture](docs/architecture.md), and the
+[threat model](docs/threat-model.md) before changing detection or parser
+behavior.
 
 </details>
 
@@ -325,18 +248,14 @@ publishing a binary.
 - [Universal Meccha Mod Builder](https://github.com/sirLimbs/Universal-Meccha-Mod-Builder)
 - [retoc](https://github.com/trumank/retoc)
 
-UE Map Guardian informed the loose-file coverage and several Windows command
-indicators. We did not copy its source code.
-
 ## Security and license
 
 Report scanner vulnerabilities through
 [GitHub Security Advisories](https://github.com/ifBars/UEWorkshopScanner/security/advisories/new).
-Do not attach live
-malware or private Workshop content to a public issue.
+Do not attach live malware or private Workshop content to a public issue.
 
-The source code is available under the [MIT License](LICENSE). Binary
-distributions containing Epic Games Licensed Technology are also subject to
+The source code uses the [MIT License](LICENSE). Binary releases containing
+Epic Games Licensed Technology are also subject to
 [BINARY-EULA.txt](BINARY-EULA.txt) and
 [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
 

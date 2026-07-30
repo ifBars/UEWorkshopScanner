@@ -2,8 +2,8 @@
 
 ## 0.1.0
 
-- Added an observe-only hotkey scan for installed MECCHA CHAMELEON Workshop
-  items.
-- Added an opt-in reflected-function diagnostic dump for locating the
-  download-to-load enforcement boundary.
+- Added automatic pre-mount scanning for MECCHA CHAMELEON Workshop maps.
+- Added fail-closed handling and a visible native warning for maps that do not
+  pass scanning.
+- Removed reverse-engineering hotkeys from the distributable runtime.
 - Added package layouts for Thunderstore and Nexus Mods.

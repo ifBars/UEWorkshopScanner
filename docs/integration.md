@@ -157,6 +157,13 @@ cooperation, a community adapter would need to hook a game-specific method or
 callback. That can enforce the decision, but it is brittle across game updates
 and introduces its own injection and supply-chain risk.
 
+The packaged integration should remain standalone from the user's perspective
+while keeping the Rust scanner in an external worker process. A native UE4SS
+adapter should own hooks, lobby state, and messages; it should not link retoc or
+Oodle into the game process. See the
+[Meccha UE4SS runtime path](meccha-ue4ss-runtime.md) for the current shipping
+build evidence, enforcement policy, and validation sequence.
+
 Meccha already has a Thunderstore package for `unreal-shimloader`, which
 provides profile-managed RE-UE4SS support. UE4SS can register callbacks for
 reflected `UFunction` calls and load C++ mods. This makes an optional
@@ -213,14 +220,14 @@ then, keep detector modules independent of Steam and game-specific paths.
 1. **Version the scan contract.** Completed with schema version 1 and a public
    Rust facade.
 2. **Add game profiles.** Started with Meccha App ID `4704690`.
-3. **Trace the Meccha boundary.** Use the observe-only UE4SS prototype on a
-   benign map to identify a cancellable, version-gated transition.
+3. **Trace the Meccha boundary.** Completed for the current build at
+   `MountIoStoreAndGetLevelsFromAssetRegistry`.
 4. **Build launcher preflight.** Discover libraries, enumerate installed items,
    cache complete verdicts, and launch through Steam.
 5. **Add watcher mode.** Scan stable new or updated Workshop manifests and
    notify the user without promising enforcement.
-6. **Implement the Meccha gate only after validation.** Hold the exact
-   download-to-load transition, fail closed, and expose protection status.
+6. **Implement the Meccha gate.** The experimental adapter now holds the exact
+   IoStore mount transition, fails closed, and exposes protection status.
 7. **Add games through evidence.** Require a public support request, benign
    fixture plan, layout evidence, compression details, and a named maintainer.
 

@@ -5,6 +5,7 @@ pub mod game_profile;
 mod hashing;
 mod markers;
 pub mod model;
+mod notification;
 mod oodle;
 pub mod output;
 mod rules;

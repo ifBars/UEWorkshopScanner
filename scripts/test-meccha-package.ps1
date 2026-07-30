@@ -60,15 +60,21 @@ if ($width -ne 256 -or $height -ne 256) {
 
 $lua = Get-Content -LiteralPath $scriptPath -Raw
 foreach ($contract in @(
-    "RegisterKeyBind",
+    "RegisterHook",
+    "MountIoStoreAndGetLevelsFromAssetRegistry",
+    "LoopInGameThreadWithDelay",
+    "CancelDelayedAction",
     "ExecuteAsync",
-    "--game meccha-chameleon",
-    "ForEachUObject",
-    "observe-only"
+    "--game",
+    "meccha-chameleon",
+    "--notify-block"
 )) {
     if (-not $lua.Contains($contract)) {
         throw "UE4SS prototype is missing expected contract text: $contract"
     }
+}
+if ($lua.Contains("RegisterKeyBind")) {
+    throw "The distributable UE4SS mod must not require runtime hotkeys."
 }
 
 Write-Host "Meccha UE4SS package source is valid."

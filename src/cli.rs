@@ -20,6 +20,12 @@ struct Options {
 }
 
 pub(crate) fn run(args: Vec<OsString>) -> Result<i32> {
+    if args
+        .first()
+        .is_some_and(|argument| argument == "--notify-block")
+    {
+        return crate::notification::run(&args[1..]);
+    }
     if args.is_empty()
         || args
             .iter()
