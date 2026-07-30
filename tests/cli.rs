@@ -73,3 +73,48 @@ fn writes_a_versioned_profile_aware_report_to_a_file() {
 
     std::fs::remove_dir_all(fixture).unwrap();
 }
+
+#[test]
+fn summary_mode_fails_closed_and_explains_incomplete_scans() {
+    let fixture = std::env::temp_dir().join(format!("uews-summary-fixture-{}", std::process::id()));
+    std::fs::create_dir_all(&fixture).unwrap();
+    std::fs::write(fixture.join("readme.txt"), "benign fixture").unwrap();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_ue-workshop-scanner"))
+        .arg(&fixture)
+        .arg("--summary")
+        .output()
+        .expect("scanner process should start");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    assert_eq!(output.status.code(), Some(4));
+    assert!(stdout.starts_with("block: yes\nverdict: incomplete\ncomplete: no\n"));
+    assert!(stdout.contains("rules triggered: none"));
+    assert!(stdout.contains("analysis issues:"));
+
+    std::fs::remove_dir_all(fixture).unwrap();
+}
+
+#[test]
+fn writes_summary_format_to_a_file_without_json() {
+    let fixture =
+        std::env::temp_dir().join(format!("uews-summary-file-fixture-{}", std::process::id()));
+    let report = fixture.join("summary.txt");
+    std::fs::create_dir_all(&fixture).unwrap();
+    std::fs::write(fixture.join("readme.txt"), "benign fixture").unwrap();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_ue-workshop-scanner"))
+        .arg(&fixture)
+        .args(["--format", "summary", "--output"])
+        .arg(&report)
+        .output()
+        .expect("scanner process should start");
+    let text = std::fs::read_to_string(&report).unwrap();
+
+    assert_eq!(output.status.code(), Some(4));
+    assert!(output.stdout.is_empty());
+    assert!(text.starts_with("block: yes\nverdict: incomplete\n"));
+    assert!(!text.trim_start().starts_with('{'));
+
+    std::fs::remove_dir_all(fixture).unwrap();
+}

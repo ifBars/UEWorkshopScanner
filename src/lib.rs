@@ -6,6 +6,7 @@ mod hashing;
 mod markers;
 pub mod model;
 mod oodle;
+pub mod output;
 mod rules;
 pub mod scanner;
 mod threat_intel;

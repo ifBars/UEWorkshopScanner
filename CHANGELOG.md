@@ -7,6 +7,12 @@ and releases use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Human-readable `--format summary` and `--summary` CLI output with the final
+  blocking recommendation, verdict, completeness, triggered rules, and
+  analysis issues.
+
 ## [0.1.0-alpha.1] - 2026-07-29
 
 ### Added

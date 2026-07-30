@@ -88,6 +88,32 @@ Integrations can select a supported game profile and write JSON directly:
 Run `ue-workshop-scanner --list-games` to see the profiles embedded in the
 current build.
 
+For a concise answer intended for a person rather than another tool, use
+summary output:
+
+```powershell
+.\ue-workshop-scanner.exe "D:\path\to\WorkshopItem" `
+  --game meccha-chameleon `
+  --summary
+```
+
+```text
+block: yes
+verdict: block
+complete: yes
+message: Likely malware detected
+threat family: meccha-workshop-dropper
+rules triggered: 2
+- UWS103 [critical] Automatic Blueprint logic writes outside the game content area
+  location: Content/Example.uasset
+- UWS108 [critical] Meccha Chameleon Blueprint dropper behavior chain
+  location: Content/Example.uasset
+```
+
+`--format summary` is the long form of `--summary`. Combine either with
+`--output summary.txt` to save the result. JSON remains the default for scripts
+and integrations.
+
 <details>
 <summary><strong>Bundled decoder builds and license acceptance</strong></summary>
 
@@ -120,6 +146,10 @@ CLI requires its SHA-256 digest and refuses a mismatch.
 The report keeps completeness separate from threat classification. A missing
 container, skipped file, parser failure, or oversized item can never become
 `allow`.
+
+In summary mode, `block` follows the final disposition rather than the presence
+of an individual rule. An incomplete scan therefore reports `block: yes` even
+when `rules triggered: none`.
 
 ```json
 {

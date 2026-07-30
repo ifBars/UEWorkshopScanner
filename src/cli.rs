@@ -1,6 +1,7 @@
 use crate::{
     game_profile::{built_in_game_profiles, game_profile},
     oodle,
+    output::{OutputFormat, format_summary},
     scanner::{OodleDecoder, Scanner, ScannerOptions},
 };
 use anyhow::{Context, Result, bail};
@@ -15,6 +16,7 @@ struct Options {
     accept_eula: bool,
     game: Option<String>,
     output: Option<PathBuf>,
+    output_format: OutputFormat,
 }
 
 pub(crate) fn run(args: Vec<OsString>) -> Result<i32> {
@@ -78,7 +80,10 @@ pub(crate) fn run(args: Vec<OsString>) -> Result<i32> {
         "block" => 3,
         _ => 4,
     };
-    let json = serde_json::to_string_pretty(&report)?;
+    let rendered = match options.output_format {
+        OutputFormat::Json => serde_json::to_string_pretty(&report)?,
+        OutputFormat::Summary => format_summary(&report),
+    };
     if let Some(output) = options.output {
         if let Some(parent) = output
             .parent()
@@ -87,10 +92,10 @@ pub(crate) fn run(args: Vec<OsString>) -> Result<i32> {
             std::fs::create_dir_all(parent)
                 .with_context(|| format!("could not create {}", parent.display()))?;
         }
-        std::fs::write(&output, format!("{json}\n"))
+        std::fs::write(&output, format!("{}\n", rendered.trim_end()))
             .with_context(|| format!("could not write {}", output.display()))?;
     } else {
-        println!("{json}");
+        println!("{}", rendered.trim_end());
     }
     Ok(exit_code)
 }
@@ -106,6 +111,7 @@ fn parse_options(args: Vec<OsString>) -> Result<Options> {
     let mut accept_eula = false;
     let mut game = None;
     let mut output = None;
+    let mut output_format = OutputFormat::Json;
     while let Some(argument) = args.next() {
         match argument.to_string_lossy().as_ref() {
             "--oodle-path" => {
@@ -147,6 +153,15 @@ fn parse_options(args: Vec<OsString>) -> Result<Options> {
                     args.next().context("--output needs a value")?,
                 ));
             }
+            "--format" => {
+                output_format = OutputFormat::parse(
+                    &args
+                        .next()
+                        .context("--format needs a value")?
+                        .to_string_lossy(),
+                )?;
+            }
+            "--summary" => output_format = OutputFormat::Summary,
             "--licenses" => unreachable!("handled before option parsing"),
             unknown => bail!("unknown argument: {unknown}"),
         }
@@ -159,6 +174,7 @@ fn parse_options(args: Vec<OsString>) -> Result<Options> {
         accept_eula,
         game,
         output,
+        output_format,
     })
 }
 
@@ -178,7 +194,9 @@ fn print_help() {
            --accept-eula            Accept the bundled binary EULA non-interactively\n  \
            --game <profile-id>      Include a supported game profile in the report\n  \
            --list-games             List embedded game profiles\n  \
-           --output <path>          Write JSON to a file instead of standard output\n  \
+           --output <path>          Write the selected report to a file\n  \
+           --format <json|summary>  Select machine or human-readable output\n  \
+           --summary                Shortcut for --format summary\n  \
            --licenses               Print source license, binary EULA, and notices\n  \
            -h, --help               Print help\n  \
            -V, --version            Print version\n\n\
@@ -207,6 +225,7 @@ mod tests {
         assert!(options.accept_eula);
         assert!(options.game.is_none());
         assert!(options.output.is_none());
+        assert_eq!(options.output_format, OutputFormat::Json);
     }
 
     #[test]

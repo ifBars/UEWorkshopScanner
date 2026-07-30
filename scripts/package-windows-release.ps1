@@ -4,7 +4,7 @@ param(
     [ValidateScript({ Test-Path -LiteralPath $_ -PathType Leaf })]
     [string] $OodlePath,
 
-    [string] $Version = "0.1.0-alpha.1",
+    [string] $Version = "0.1.0-alpha.2",
 
     [string] $OutputDirectory = (Join-Path $PSScriptRoot "..\artifacts\release")
 )
