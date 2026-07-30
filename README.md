@@ -4,72 +4,87 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/Rust-2024-orange.svg)](https://www.rust-lang.org/)
 
-UEWorkshopScanner is a local static malware scanner for Unreal Engine Workshop
-content. It scans the complete Workshop item envelope, opens UE5 IoStore
-packages in-process, correlates cooked-asset behavior, and returns a
-machine-readable disposition before the add-on is loaded by a game.
+UEWorkshopScanner checks Unreal Engine Workshop content before a game loads it.
+It reads UE5 IoStore packages in-process, inspects loose files, and returns a
+JSON verdict that launchers and mod managers can act on.
 
-The initial rules target the attack chain used in malicious
+I started this after malicious
 [MECCHA CHAMELEON](https://store.steampowered.com/app/4704690/MECCHA_CHAMELEON/)
-Workshop maps: automatic Blueprint execution, external file writes, script
-construction, hidden shell execution, and download behavior.
+maps used Blueprint logic to write and launch a malware downloader. The first
+rules focus on that attack chain, but the scanner can support
+other Unreal games and threat families as we find real samples.
 
 > [!IMPORTANT]
-> This is an early static-analysis tool, not an antivirus replacement. An
-> `allow` verdict means no current rule matched and the scan completed; it does
-> not prove that an add-on is safe.
-
-## What it detects
-
-- automatic `BeginPlay` behavior reaching file or URL operations;
-- writes into user-controlled directories, especially script extensions;
-- PowerShell and command-shell download-and-execute chains;
-- encoded commands, policy bypasses, Windows script hosts, and common LoLBins;
-- raw-IP payload endpoints;
-- JSON/batch polyglot construction;
-- hidden shell execution;
-- loose scripts/executables and disguised `MZ` files;
-- the documented Meccha Chameleon dropper behavior chain;
-- retained historical RCE fixture names.
-
-Rules correlate markers within the same cooked asset. Individual dual-use
-Blueprint functions do not block a map by themselves.
+> This is pre-release software. There is no public binary download yet, and an
+> `allow` verdict is not proof that a Workshop item is safe.
 
 ## Quick start
 
-Windows archives will be published through
-[GitHub Releases](../../releases). Until the first archive is available, build
-the CLI from source as described below. Extract the entire archive, then scan a
-Workshop item by selecting its directory (recommended) or a single `.utoc`
-entry point:
+You need Rust 1.88 or newer. Oodle-compressed content also needs an authorized
+Oodle Data 2.9.10 Windows decoder.
 
 ```powershell
-.\ue-workshop-scanner.exe "D:\path\to\WorkshopItem"
+git clone https://github.com/ifBars/UEWorkshopScanner.git
+cd UEWorkshopScanner
+cargo build --locked --release
 ```
 
-The release archive keeps the scanner and its pinned Oodle decoder together.
-On first use, review and accept the bundled binary terms:
+Scan the entire Workshop item directory when possible:
+
+```powershell
+.\target\release\ue-workshop-scanner.exe "D:\path\to\WorkshopItem" `
+  --oodle-path "D:\path\to\oo2core_9_win64.dll" `
+  --oodle-sha256 "<sha256>"
+```
+
+You can also scan one IoStore entry point:
+
+```powershell
+.\target\release\ue-workshop-scanner.exe "D:\path\to\Map-Windows.utoc" `
+  --oodle-path "D:\path\to\oo2core_9_win64.dll" `
+  --oodle-sha256 "<sha256>"
+```
+
+The scanner writes its report to standard output. Redirect it to keep a copy:
+
+```powershell
+.\target\release\ue-workshop-scanner.exe "D:\path\to\WorkshopItem" `
+  --oodle-path "D:\path\to\oo2core_9_win64.dll" `
+  --oodle-sha256 "<sha256>" > scan-result.json
+```
+
+<details>
+<summary><strong>Bundled decoder builds and license acceptance</strong></summary>
+
+Planned Windows release archives keep the scanner and an approved Oodle
+decoder together. The first run will ask you to review and accept the binary
+terms:
 
 ```powershell
 .\ue-workshop-scanner.exe --licenses
-.\ue-workshop-scanner.exe "D:\path\to\Map-Windows.utoc" --accept-eula
+.\ue-workshop-scanner.exe "D:\path\to\WorkshopItem" --accept-eula
 ```
 
-Acceptance is stored once in the user's local configuration directory.
-Interactive use prompts instead of requiring the flag.
+The CLI stores acceptance in your local configuration directory. Interactive
+runs prompt when you have not accepted the terms yet.
 
-### Read the result
+The source build never downloads a decoder. When you provide one manually, the
+CLI requires its SHA-256 digest and refuses a mismatch.
 
-The CLI writes a JSON report to standard output.
+</details>
+
+## Read the result
 
 | Verdict | Exit code | Meaning |
 | --- | ---: | --- |
-| `allow` | 0 | Scan completed and no current rule matched |
-| `review` | 2 | Suspicious dual-use behavior needs review |
+| `allow` | 0 | The scan completed and no current rule matched |
+| `review` | 2 | Dual-use or suspicious behavior needs review |
 | `block` | 3 | A high-confidence malicious behavior chain matched |
-| `incomplete` | 4 | Some content could not be safely inspected |
+| `incomplete` | 4 | The scanner could not inspect everything safely |
 
-Example:
+The report keeps completeness separate from threat classification. A missing
+container, skipped file, parser failure, or oversized item can never become
+`allow`.
 
 ```json
 {
@@ -85,64 +100,104 @@ Example:
       "variant_id": "blueprint-user-write-shell-download",
       "confidence": 0.99
     }
-  ],
-  "chunks_seen": 2088,
-  "chunks_scanned": 2088,
-  "findings": [
-    {
-      "rule_id": "UWS108",
-      "title": "Meccha Chameleon Blueprint dropper behavior chain",
-      "severity": "critical",
-      "blocking": true
-    }
   ]
 }
 ```
 
-## Safety properties
+## What it checks
 
-- no network client and no runtime dependency downloads;
-- no Unreal Engine or `UnrealPak.exe` requirement;
-- no extraction of scanned assets to disk;
-- exact Oodle redistributable hash allowlist;
-- configurable per-file/chunk size cap;
-- incomplete analysis can never produce `allow`;
-- deterministic artifact and finding order;
-- Workshop packages, cooked assets, and malware samples are excluded from Git.
+UEWorkshopScanner currently looks for:
 
-The native decoder and container parser still process attacker-controlled
-input. The planned desktop integration should run this CLI as an unprivileged,
-resource-limited worker. See [THREAT_MODEL.md](THREAT_MODEL.md) and
-[ARCHITECTURE.md](ARCHITECTURE.md).
+- automatic Blueprint execution tied to file writes or URL launches;
+- writes into user-controlled directories, especially script files;
+- PowerShell and command-shell download-and-execute chains;
+- encoded commands, policy bypasses, script hosts, and common Windows LoLBins;
+- raw-IP payload URLs and hidden execution;
+- JSON/batch polyglot construction;
+- loose scripts, executables, and files with disguised `MZ` headers;
+- the documented Meccha Chameleon Workshop dropper family.
 
-## Build from source
+Rules correlate behavior inside the same artifact. A normal `BeginPlay`,
+`ToFile`, or `powershell` string does not block a map by itself.
 
-Requirements:
+## Safety model
 
-- current stable Rust toolchain with the 2024 edition;
-- an authorized Oodle Data 2.9.10 Windows decoder for Oodle-compressed content.
+The scanner does not start Unreal Engine, run `UnrealPak.exe`, extract cooked
+assets, execute scripts, or load executables found in a Workshop item.
+
+It also has no network client. The patched Oodle adapter cannot download native
+code and accepts only an explicit decoder path with a matching digest.
+
+The container parser and native decoder still process attacker-controlled
+bytes. A future desktop app should run this CLI as a disposable,
+resource-limited process without administrator access or network access.
+
+Read the [threat model](docs/threat-model.md) and
+[architecture](docs/architecture.md) for the full boundary.
+
+## Current coverage
+
+- The scanner supports UE5 IoStore directories and direct `.utoc`/`.ucas`
+  inputs.
+- The scanner inspects loose Workshop files without executing them.
+- The scanner inventories legacy `.pak` files but does not parse them yet.
+- Encrypted containers need an authorized key and are not supported.
+- Detection uses serialized markers and correlation, not full Kismet
+  control-flow reconstruction.
+- Native plugins, UE4SS mods, and DLL injection chains are outside the current
+  scope.
+
+## Build and contribute
+
+Run the same checks used by CI:
 
 ```powershell
-cargo build --locked --release
+cargo fmt --check
 cargo test --locked
 cargo clippy --locked --all-targets -- -D warnings
+cargo +1.88.0 check --locked --all-targets
 ```
 
-Use a separately obtained decoder by providing both its path and digest:
+The package uses Cargo's standard library-plus-binary layout. `src/main.rs` is
+only the process entry point; the scanner lives in testable library modules.
 
-```powershell
-.\target\release\ue-workshop-scanner.exe `
-  "D:\path\to\Map-Windows.utoc" `
-  --oodle-path "D:\path\to\oo2core_9_win64.dll" `
-  --oodle-sha256 "<sha256>"
+<details>
+<summary><strong>Source layout</strong></summary>
+
+```text
+src/
+  main.rs          process entry point
+  lib.rs           crate root
+  cli.rs           arguments, help, JSON output, and exit codes
+  scanner.rs       scan orchestration
+  envelope.rs      Workshop directory and loose-file inspection
+  container.rs     bounded IoStore reads through retoc
+  markers.rs       ASCII and UTF-16 marker extraction
+  rules.rs         foundational behavior findings
+  threat_intel.rs  threat-family and disposition classification
+  model.rs         report and evidence types
+  oodle.rs         decoder verification and binary license flow
+  hashing.rs       streaming SHA-256 helpers
+tests/
+  cli.rs           process-level CLI contract tests
+vendor/
+  oodle_loader_safe/
 ```
 
-Run `ue-workshop-scanner --help` for the complete CLI reference.
+</details>
 
-## Release packaging
+New blocking rules need an inert positive test, a benign negative test, and a
+documented behavior chain. Do not commit malware, private Workshop maps,
+proprietary Unreal assets, Oodle binaries, or decryption keys.
 
-Maintainers can build a self-contained Windows archive from an approved local
-Epic redistributable:
+See [CONTRIBUTING.md](CONTRIBUTING.md) before changing rules, parser behavior,
+or completeness handling.
+
+<details>
+<summary><strong>Release packaging</strong></summary>
+
+Maintainers can build a Windows archive from an approved local Epic
+redistributable:
 
 ```powershell
 .\scripts\package-windows-release.ps1 `
@@ -150,47 +205,37 @@ Epic redistributable:
   -Version "0.1.0"
 ```
 
-The packager performs no downloads. It validates the decoder hash, builds with
-`Cargo.lock`, includes the binary EULA and notices, and generates per-file and
-archive SHA-256 checksums. See
-[OODLE_DISTRIBUTION.md](OODLE_DISTRIBUTION.md) for the distribution rationale
-and residual licensing risk.
+The packager performs no downloads. It verifies the decoder, builds with
+`Cargo.lock`, includes the required terms and notices, and writes SHA-256
+checksums.
 
-## Current limitations
+Read the [Oodle distribution assessment](docs/oodle-distribution.md) before
+publishing a binary.
 
-- UE5 IoStore and loose-file Workshop directories are the current end-user
-  path; legacy `.pak` contents are inventoried but not yet parsed.
-- Encrypted containers require an authorized key and are not currently
-  supported.
-- Marker correlation does not yet reconstruct complete Kismet control flow.
-- Native C++ plugins, UE4SS mods, and DLL injection chains are out of scope.
-- Detection is currently focused on published Meccha Chameleon behavior.
+</details>
 
-## Research basis
+## Research and related work
 
 - [2-Click Remote Code Execution in Meccha Chameleon](https://khaelkugler.com/blogs/meccha_chameleon.html)
 - [Workshop map for MECCHA CHAMELEON is a malware dropper](https://medium.com/@FeintBE/workshop-map-for-meccha-chameleon-is-a-malware-dropper-full-breakdown-d1ac29565265)
 - [The Meccha Chameleon Malware Incident](https://www.youtube.com/watch?v=RB9MrJ2fNqE)
+- [UE Map Guardian](https://github.com/PotateBulle/UE-Map-Guardian)
 - [retoc](https://github.com/trumank/retoc)
-- [UE Map Guardian](https://github.com/PotateBulle/UE-Map-Guardian), whose
-  loose-file coverage and Windows command indicators informed this iteration.
 
-No source code was copied from UE Map Guardian. No malicious sample, private
-Workshop package, or proprietary Unreal asset is included in this repository.
+UE Map Guardian informed the loose-file coverage and several Windows command
+indicators. We did not copy its source code.
 
-## Contributing and security
+## Security and license
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing rules or parser
-behavior. Please report scanner vulnerabilities privately through
-[GitHub Security Advisories](../../security/advisories/new); do not attach live
-malware to a public issue.
+Report scanner vulnerabilities through
+[GitHub Security Advisories](https://github.com/ifBars/UEWorkshopScanner/security/advisories/new).
+Do not attach live
+malware or private Workshop content to a public issue.
 
-## License and trademarks
-
-UEWorkshopScanner source code is available under the [MIT License](LICENSE).
-Compiled distributions containing Epic Games Licensed Technology are also
-subject to [BINARY-EULA.txt](BINARY-EULA.txt) and
+The source code is available under the [MIT License](LICENSE). Binary
+distributions containing Epic Games Licensed Technology are also subject to
+[BINARY-EULA.txt](BINARY-EULA.txt) and
 [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
 
-UEWorkshopScanner is independent and is not affiliated with, sponsored by, or
-endorsed by Epic Games, Valve, or the developers of MECCHA CHAMELEON.
+UEWorkshopScanner is independent and is not affiliated with Epic Games, Valve,
+or the developers of MECCHA CHAMELEON.

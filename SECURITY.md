@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Please report vulnerabilities privately through
-[GitHub Security Advisories](../../security/advisories/new).
+[GitHub Security Advisories](https://github.com/ifBars/UEWorkshopScanner/security/advisories/new).
 
 Include:
 

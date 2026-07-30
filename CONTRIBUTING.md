@@ -11,6 +11,7 @@ Run the same checks as CI:
 cargo fmt --check
 cargo test --locked
 cargo clippy --locked --all-targets -- -D warnings
+cargo +1.88.0 check --locked --all-targets
 ```
 
 Keep changes focused and explain how scan completeness, verdicts, and false
@@ -32,6 +33,16 @@ Keep the detection layers separate: byte markers belong in `markers.rs`,
 correlated low-level findings in `rules.rs`, named behavior variants in
 `threat_intel.rs`, and input/parser coverage failures in the completeness
 model. Do not teach a primitive rule to make the final product verdict.
+
+Keep process and product concerns separate too:
+
+- `main.rs` only starts the CLI;
+- `cli.rs` owns arguments, terminal output, and exit codes;
+- `scanner.rs` coordinates the scan and builds the report;
+- `oodle.rs` owns decoder verification and binary-license handling.
+
+Put focused unit tests beside the module they cover. Put process-level CLI
+contracts in `tests/`.
 
 ## Samples and licensed files
 

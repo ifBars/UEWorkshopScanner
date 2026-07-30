@@ -38,7 +38,30 @@ this repository replaces it with `vendor/oodle_loader_safe`. The replacement:
 
 Official Windows archives place an approved decoder beside the executable. The
 CLI detects that file by name, independently hashes it, and accepts only the
-reviewed digests in `src/main.rs`.
+reviewed digests in `src/oodle.rs`.
+
+## Source layout
+
+The Cargo package contains one library target and one thin binary target:
+
+```text
+src/main.rs          process entry point
+src/lib.rs           library crate root
+src/cli.rs           argument and output contract
+src/scanner.rs       scan orchestration
+src/envelope.rs      Workshop item discovery and loose files
+src/container.rs     IoStore reads
+src/markers.rs       byte-to-marker normalization
+src/rules.rs         foundational findings
+src/threat_intel.rs  family and disposition classification
+src/model.rs         report types
+src/oodle.rs         decoder and license boundary
+src/hashing.rs       streaming file hashes
+```
+
+The binary calls the library's CLI entry point and contains no scanner logic.
+This keeps process concerns out of the detection pipeline and leaves one place
+to add a stable integration API later.
 
 ## Scan pipeline
 
@@ -97,8 +120,8 @@ control-flow reconstruction.
 - proprietary decoders, Workshop packages, and cooked Unreal assets are never
   committed.
 
-See [OODLE_DISTRIBUTION.md](OODLE_DISTRIBUTION.md) for the Oodle distribution
-decision and [THREAT_MODEL.md](THREAT_MODEL.md) for attacker-controlled input
+See [Oodle distribution](oodle-distribution.md) for the Oodle distribution
+decision and the [threat model](threat-model.md) for attacker-controlled input
 boundaries.
 
 ## Future desktop integration

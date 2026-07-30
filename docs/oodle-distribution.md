@@ -6,6 +6,11 @@ This is an engineering licensing assessment, not legal advice.
 
 ## Recommendation
 
+Keep the scanner source under MIT while the Windows distribution depends on a
+bundled proprietary Oodle decoder. GPL-3.0 would introduce a separate linking
+and distribution question unless the project added a suitable exception or
+received qualified legal guidance.
+
 Project policy treats the unmodified Epic Oodle 2.9.10 Windows redistributable
 as object code incorporated into, and inseparable from, the compiled scanner
 Product under Section 4 of the Unreal Engine EULA. Reassess this interpretation
@@ -123,3 +128,5 @@ Keep the written response with the project's release-compliance records.
   https://github.com/WorkingRobot/OodleUE
 - ooz safety warning:
   https://github.com/powzix/ooz
+- GNU GPL FAQ on GPL-incompatible libraries:
+  https://www.gnu.org/licenses/gpl-faq.html#GPLIncompatibleLibs

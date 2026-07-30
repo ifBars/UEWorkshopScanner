@@ -2,10 +2,13 @@
 name = "ue-workshop-scanner"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.88"
 license = "MIT"
 repository = "https://github.com/ifBars/UEWorkshopScanner"
 readme = "README.md"
 description = "Static malware scanner for Unreal Engine Workshop content"
+keywords = ["unreal-engine", "steam-workshop", "malware", "security"]
+categories = ["command-line-utilities"]
 publish = false
 
 [dependencies]
