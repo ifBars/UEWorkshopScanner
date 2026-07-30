@@ -1,7 +1,15 @@
 # Contributing
 
 Contributions are welcome, especially parser hardening, inert regression
-fixtures, false-positive reductions, and documented behavior rules.
+fixtures, false-positive reductions, documented behavior rules, and evidence
+for additional Unreal Engine games.
+
+For a new game, start with the
+[game-support issue form](https://github.com/ifBars/UEWorkshopScanner/issues/new?template=game-support.yml).
+Document its App ID, Unreal version, Workshop layout, compression, loading
+flow, and public benign examples before proposing code. Read the
+[integration strategy](docs/integration.md) for the boundary between the
+generic scanner and game-specific adapters.
 
 ## Before opening a pull request
 
@@ -40,6 +48,9 @@ Keep process and product concerns separate too:
 - `cli.rs` owns arguments, terminal output, and exit codes;
 - `scanner.rs` coordinates the scan and builds the report;
 - `oodle.rs` owns decoder verification and binary-license handling.
+
+Do not add Steam App IDs, install paths, or game-specific loading behavior to
+the detector modules. Those belong in a game profile or integration layer.
 
 Put focused unit tests beside the module they cover. Put process-level CLI
 contracts in `tests/`.

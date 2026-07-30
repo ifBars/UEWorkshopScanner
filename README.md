@@ -4,19 +4,26 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/Rust-2024-orange.svg)](https://www.rust-lang.org/)
 
-UEWorkshopScanner checks Unreal Engine Workshop content before a game loads it.
-It reads UE5 IoStore packages in-process, inspects loose files, and returns a
-JSON verdict that launchers and mod managers can act on.
+UEWorkshopScanner is a static malware scanner for Unreal Engine Workshop
+content. It reads UE5 IoStore packages in-process, inspects loose files, and
+returns a JSON verdict that launchers, mod managers, and game integrations can
+act on.
 
 I started this after malicious
 [MECCHA CHAMELEON](https://store.steampowered.com/app/4704690/MECCHA_CHAMELEON/)
-maps used Blueprint logic to write and launch a malware downloader. The first
-rules focus on that attack chain, but the scanner can support
-other Unreal games and threat families as we find real samples.
+maps used Blueprint logic to write and launch a malware downloader. Meccha is
+the first supported target, not the limit of the project. The scanner is
+designed to add other Unreal games and threat families as we learn their
+Workshop layouts and obtain safe, representative fixtures.
+
+[Meccha Chameleon 3.1.0](https://steamcommunity.com/ogg/4704690/announcements/detail/680756685198854754)
+added a security patch for MOD maps. This scanner is additional defense for
+Meccha and a foundation for protecting other Unreal Workshop ecosystems.
 
 > [!IMPORTANT]
 > This is pre-release software. There is no public binary download yet, and an
-> `allow` verdict is not proof that a Workshop item is safe.
+> `allow` verdict is not proof that a Workshop item is safe. The current CLI
+> also does not intercept a game or Steam download automatically.
 
 ## Quick start
 
@@ -147,6 +154,36 @@ Read the [threat model](docs/threat-model.md) and
 - Native plugins, UE4SS mods, and DLL injection chains are outside the current
   scope.
 
+### Game support
+
+Meccha Chameleon is the initial target. Its Workshop items use Steam App ID
+`4704690`, and the current threat-family rules cover the documented Meccha
+Blueprint dropper chain.
+
+Support for another Unreal game needs more than adding its name. We need to
+confirm its Unreal version, Workshop directory and container layout,
+compression requirements, safe test fixtures, and the point where the game
+mounts downloaded content.
+
+[Open a game-support request](https://github.com/ifBars/UEWorkshopScanner/issues/new?template=game-support.yml)
+if you can provide that information. Do not upload proprietary game files,
+private Workshop items, or malware to the issue.
+
+## Integration status
+
+Today, UEWorkshopScanner is a manual and automation-friendly CLI. A launcher
+can scan installed Workshop items before starting a game, and a companion app
+can watch for new or updated items.
+
+That is useful coverage, but it is not a guaranteed block for Meccha's
+in-lobby flow. When a player accepts a missing map, Steam downloads it and the
+game may load it immediately. A filesystem watcher can lose that race. Reliable
+blocking requires a game-side integration that pauses between Steam reporting
+the item as downloaded and Unreal mounting or loading it.
+
+The proposed integration paths, trust boundaries, and staged roadmap are in
+[docs/integration.md](docs/integration.md).
+
 ## Build and contribute
 
 Run the same checks used by CI:
@@ -220,6 +257,7 @@ publishing a binary.
 - [Workshop map for MECCHA CHAMELEON is a malware dropper](https://medium.com/@FeintBE/workshop-map-for-meccha-chameleon-is-a-malware-dropper-full-breakdown-d1ac29565265)
 - [The Meccha Chameleon Malware Incident](https://www.youtube.com/watch?v=RB9MrJ2fNqE)
 - [UE Map Guardian](https://github.com/PotateBulle/UE-Map-Guardian)
+- [Universal Meccha Mod Builder](https://github.com/sirLimbs/Universal-Meccha-Mod-Builder)
 - [retoc](https://github.com/trumank/retoc)
 
 UE Map Guardian informed the loose-file coverage and several Windows command

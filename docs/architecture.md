@@ -124,7 +124,7 @@ See [Oodle distribution](oodle-distribution.md) for the Oodle distribution
 decision and the [threat model](threat-model.md) for attacker-controlled input
 boundaries.
 
-## Future desktop integration
+## Integration boundary
 
 A graphical frontend should treat this CLI as a disposable worker rather than
 linking the parser directly into the UI process. The worker should run:
@@ -137,3 +137,9 @@ linking the parser directly into the UI process. The worker should run:
 
 That boundary limits the impact of a future parser or native decompressor
 vulnerability while keeping the CLI useful by itself.
+
+Game discovery and enforcement are separate concerns. A launcher can preflight
+installed content, while reliable in-session blocking requires a game-specific
+gate before Unreal mounts a newly downloaded item. See the
+[integration strategy](integration.md) for the proposed companion, game
+profiles, and Meccha Chameleon download path.

@@ -1,0 +1,89 @@
+name: New game support
+description: Request support for another Unreal Engine game or Workshop layout
+title: "[Game support]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        UEWorkshopScanner is game-agnostic, with Meccha Chameleon as its initial target.
+        Please provide public metadata and reproducible layout details. Do not upload proprietary game files, private Workshop items, malware, Oodle binaries, or decryption keys.
+
+  - type: input
+    id: game
+    attributes:
+      label: Game
+      placeholder: Game name
+    validations:
+      required: true
+
+  - type: input
+    id: app_id
+    attributes:
+      label: Steam App ID
+      description: The numeric App ID used by the game's Workshop.
+      placeholder: "4704690"
+    validations:
+      required: true
+
+  - type: input
+    id: unreal_version
+    attributes:
+      label: Unreal Engine version
+      description: Include how you verified it, or write unknown.
+      placeholder: UE 5.6
+    validations:
+      required: true
+
+  - type: textarea
+    id: layout
+    attributes:
+      label: Workshop item layout
+      description: List filenames and relative paths only. Do not attach game content.
+      placeholder: |
+        <item-id>/
+          Map-Windows.utoc
+          Map-Windows.ucas
+          Map-Windows.pak
+    validations:
+      required: true
+
+  - type: textarea
+    id: delivery
+    attributes:
+      label: Download and loading flow
+      description: Explain how users obtain the item and when the game mounts or loads it.
+      placeholder: The host selects a map, clients receive a download prompt, and...
+    validations:
+      required: true
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Public benign examples
+      description: Link public Workshop items that can be used to understand the format. Links do not authorize redistribution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: compression
+    attributes:
+      label: Container and compression details
+      description: Note IoStore, legacy PAK, Oodle version, encryption, or anything still unknown.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Additional evidence
+      description: Link public technical documentation, logs with personal paths removed, or related security research.
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checklist
+      options:
+        - label: I have not attached malware, proprietary game files, private Workshop content, native decoders, or decryption keys.
+          required: true
+        - label: I understand that a public Workshop link does not grant permission to redistribute its contents.
+          required: true

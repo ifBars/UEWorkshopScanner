@@ -20,6 +20,8 @@ and releases use [Semantic Versioning](https://semver.org/).
 - Bundled-decoder license display and one-time acceptance.
 - Deterministic Windows release packaging with SHA-256 checksums.
 - Process-level CLI contract tests.
+- Integration strategy for launchers, Workshop watchers, and game-side gates.
+- Structured issue form for requesting support for additional Unreal games.
 
 ### Changed
 
