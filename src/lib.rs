@@ -3,6 +3,7 @@ mod container;
 mod envelope;
 pub mod game_profile;
 mod hashing;
+mod integration_setup;
 mod markers;
 pub mod model;
 mod notification;

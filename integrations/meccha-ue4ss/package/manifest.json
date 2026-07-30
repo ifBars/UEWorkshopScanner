@@ -2,7 +2,7 @@
   "name": "UEWorkshopScanner",
   "version_number": "0.1.0",
   "website_url": "https://github.com/ifBars/UEWorkshopScanner",
-  "description": "Observe-only UE4SS prototype for scanning MECCHA CHAMELEON Workshop maps.",
+  "description": "Experimental pre-mount malware scanning for MECCHA CHAMELEON Workshop maps.",
   "dependencies": [
     "Thunderstore-MecchaChameleon_UE4SS-1.0.0"
   ]

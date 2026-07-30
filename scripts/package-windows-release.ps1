@@ -17,7 +17,7 @@ $approvedOodleSha256 = @(
 $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $rustRoot = $projectRoot
 $outputRoot = [System.IO.Path]::GetFullPath($OutputDirectory)
-$archiveName = "UEWorkshopScanner-$Version-windows-x64"
+$archiveName = "UEWorkshopScanner-$Version-cli-windows-x64"
 $stageRoot = Join-Path $outputRoot $archiveName
 $archivePath = Join-Path $outputRoot "$archiveName.zip"
 

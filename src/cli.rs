@@ -26,6 +26,12 @@ pub(crate) fn run(args: Vec<OsString>) -> Result<i32> {
     {
         return crate::notification::run(&args[1..]);
     }
+    if args
+        .first()
+        .is_some_and(|argument| argument == "--integration-setup")
+    {
+        return crate::integration_setup::run(&args[1..]);
+    }
     if args.is_empty()
         || args
             .iter()

@@ -1,5 +1,5 @@
 UEWorkshopScanner Binary End User License Agreement
-Version 1, July 29, 2026
+Version 2, July 30, 2026
 
 This agreement applies to compiled UEWorkshopScanner distributions that include
 Epic Games Licensed Technology, including the Oodle Data decompression library.
@@ -40,6 +40,43 @@ your use of UEWorkshopScanner or the Epic Games Licensed Technology.
 
 UEWorkshopScanner is an independent project. It is not affiliated with,
 sponsored by, or endorsed by Epic Games, Inc.
+
+5. No security guarantee
+
+UEWorkshopScanner is an experimental static-analysis tool. It may produce false
+positives, false negatives, incomplete results, or errors. A result that allows
+an item does not prove that the item is safe, benign, or free from malware.
+UEWorkshopScanner does not replace antivirus software, operating-system
+security controls, backups, careful review, or other reasonable security
+practices. You are responsible for deciding whether to install, load, retain,
+remove, or execute any scanned content.
+
+6. Disclaimer of warranties
+
+TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, UEWORKSHOPSCANNER AND ALL
+RELATED BINARIES, RULES, REPORTS, DOCUMENTATION, AND SERVICES ARE PROVIDED "AS
+IS" AND "AS AVAILABLE," WITHOUT WARRANTIES, REPRESENTATIONS, OR CONDITIONS OF
+ANY KIND, EXPRESS, IMPLIED, OR STATUTORY. THIS INCLUDES WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON-INFRINGEMENT,
+ACCURACY, AVAILABILITY, SECURITY, AND THAT THE SOFTWARE WILL DETECT OR PREVENT
+MALWARE OR OPERATE WITHOUT INTERRUPTION OR ERROR.
+
+7. Limitation of liability
+
+TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, THE PROJECT'S AUTHORS,
+MAINTAINERS, CONTRIBUTORS, AND DISTRIBUTORS WILL NOT BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, PUNITIVE, OR CONSEQUENTIAL DAMAGES,
+OR FOR MALWARE INFECTION, LOSS OF DATA, LOSS OF PROFITS, LOSS OF USE, BUSINESS
+INTERRUPTION, SYSTEM DAMAGE, OR CLAIMS ARISING FROM OR RELATED TO
+UEWORKSHOPSCANNER, A SCAN RESULT, OR CONTENT THAT WAS SCANNED OR NOT SCANNED.
+
+IF LIABILITY CANNOT BE EXCLUDED, THE TOTAL AGGREGATE LIABILITY OF THE PROJECT'S
+AUTHORS, MAINTAINERS, CONTRIBUTORS, AND DISTRIBUTORS WILL NOT EXCEED THE AMOUNT
+YOU PAID FOR THE UEWORKSHOPSCANNER DISTRIBUTION, IF ANY.
+
+Some jurisdictions do not allow certain warranty exclusions or liability
+limitations. In those jurisdictions, these sections apply only to the maximum
+extent permitted by law and do not limit rights that cannot legally be limited.
 
 The Unreal Engine End User License Agreement also governs the Epic Games
 Licensed Technology:

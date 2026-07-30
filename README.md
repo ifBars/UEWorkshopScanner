@@ -21,7 +21,7 @@ contact a remote service, or execute files found inside a Workshop item.
 ## Download
 
 For the easiest setup, download the complete Windows ZIP from the
-[experimental release](https://github.com/ifBars/UEWorkshopScanner/releases/tag/v0.1.0-alpha.1).
+[experimental release](https://github.com/ifBars/UEWorkshopScanner/releases/tag/v0.1.0-alpha.2).
 It contains the scanner and the files needed to read compressed Unreal Engine
 content.
 
@@ -91,9 +91,9 @@ Use `--output scan-result.txt` to save the summary:
 
 ## Automatic protection for Meccha
 
-I'm currently testing an experimental UE4SS integration for Nexus Mods and
-Thunderstore. It watches Meccha's map-loading path and scans each Workshop item
-before Unreal Engine mounts it.
+The alpha.2 GitHub pre-release includes an experimental UE4SS integration. It
+watches Meccha's map-loading path and scans each Workshop item before Unreal
+Engine mounts it.
 
 - Clean maps continue loading after the scan.
 - Suspicious or incomplete maps remain blocked.
@@ -103,9 +103,11 @@ before Unreal Engine mounts it.
   saved.
 - Protection starts automatically. There are no hotkeys to press.
 
-The automatic integration is not included in the current public alpha release
-yet. Its source and current testing notes are available in the
-[Meccha UE4SS integration folder](integrations/meccha-ue4ss/README.md).
+Download the `meccha-mod-windows-x64` ZIP from the
+[alpha.2 release](https://github.com/ifBars/UEWorkshopScanner/releases/tag/v0.1.0-alpha.2)
+and follow `README-FIRST.txt`. The first launch verifies the exact tested game
+and UE4SS versions, opens the bundled binary terms for review, and activates
+protection only after acceptance.
 
 ## What the scanner checks
 

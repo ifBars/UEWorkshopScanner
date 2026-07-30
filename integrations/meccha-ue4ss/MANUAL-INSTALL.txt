@@ -1,0 +1,71 @@
+UEWorkshopScanner for MECCHA CHAMELEON
+Experimental GitHub pre-release
+=====================================
+
+Supported versions
+------------------
+
+MECCHA CHAMELEON 3.1.0
+UE4SS 3.0.1 Beta #0, Git 0196ef29
+
+The mod checks both files at startup. If either file differs from the tested
+build, protection stays inactive and a compatibility warning appears.
+
+Install
+-------
+
+1. In Steam, right-click MECCHA CHAMELEON.
+2. Select Manage, then Browse local files.
+3. Close the game.
+4. Extract this ZIP into the MECCHA CHAMELEON folder.
+5. Allow Windows to merge the included Chameleon folder.
+6. Start the game normally through Steam.
+
+The final scanner script should be located at:
+
+Chameleon\Binaries\Win64\Mods\UEWorkshopScanner\Scripts\main.lua
+
+First launch
+------------
+
+UEWorkshopScanner opens its complete Binary EULA in Notepad. Read the terms,
+close Notepad, and choose Yes or No in the setup prompt.
+
+If you accept, the scanner records that choice under your Windows user profile
+and activates automatic protection. You do not need to press a hotkey.
+
+If you decline, protection stays inactive. Restart the game to run setup again.
+
+What happens while playing
+--------------------------
+
+The mod scans each MECCHA CHAMELEON Workshop map before Unreal Engine mounts it.
+A clean map continues loading. Review, block, incomplete, and scanner-error
+results remain blocked.
+
+Meccha may repeatedly retry a denied host-selected map. To stop that loop, the
+experimental integration closes the game and shows a warning with the Workshop
+item ID and report path.
+
+Uninstall
+---------
+
+Delete:
+
+Chameleon\Binaries\Win64\Mods\UEWorkshopScanner
+
+The archive also includes UE4SS. If no other installed mod needs UE4SS, you may
+remove its files after following the upstream UE4SS uninstall guidance. Do not
+remove a shared UE4SS installation used by other mods.
+
+Important limitations
+---------------------
+
+UEWorkshopScanner is experimental. It can miss malware, produce false
+positives, or return incomplete results. An allow result does not prove a map
+is safe. Keep Windows Security or another antivirus enabled.
+
+The scanner does not upload Workshop maps or reports.
+
+Read BINARY-EULA.txt, THIRD_PARTY_NOTICES.txt, and the files under LICENSES.
+Use SHA256SUMS to verify the extracted files.

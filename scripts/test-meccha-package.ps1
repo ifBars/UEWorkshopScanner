@@ -17,6 +17,7 @@ if (Test-Path -LiteralPath $committedBin) {
 foreach ($required in @(
     $manifestPath,
     $iconPath,
+    (Join-Path $projectRoot "integrations\meccha-ue4ss\MANUAL-INSTALL.txt"),
     (Join-Path $packageRoot "README.md"),
     $scriptPath,
     $enabledPath
@@ -35,6 +36,9 @@ if ($manifest.version_number -notmatch '^\d+\.\d+\.\d+$') {
 }
 if ($manifest.dependencies -notcontains "Thunderstore-MecchaChameleon_UE4SS-1.0.0") {
     throw "The current Meccha UE4SS overlay dependency is missing."
+}
+if ($manifest.description -match "observe-only") {
+    throw "The package description still claims the enforced integration is observe-only."
 }
 
 $png = [System.IO.File]::ReadAllBytes($iconPath)
@@ -65,6 +69,9 @@ foreach ($contract in @(
     "LoopInGameThreadWithDelay",
     "CancelDelayedAction",
     "ExecuteAsync",
+    "--integration-setup",
+    "--game-exe",
+    "--ue4ss-dll",
     "--game",
     "meccha-chameleon",
     "--notify-block"

@@ -3,7 +3,7 @@ use std::{ffi::OsString, path::PathBuf};
 
 pub(crate) fn run(args: &[OsString]) -> Result<i32> {
     let options = parse_options(args)?;
-    show_blocked_message(&message(&options))?;
+    show_warning("UEWorkshopScanner blocked a map", &message(&options))?;
     Ok(0)
 }
 
@@ -87,7 +87,7 @@ fn message(options: &Options) -> String {
 }
 
 #[cfg(windows)]
-fn show_blocked_message(message: &str) -> Result<()> {
+fn message_box(caption: &str, message: &str, message_type: u32) -> Result<i32> {
     use std::{ffi::c_void, iter::once};
 
     #[link(name = "user32")]
@@ -100,34 +100,53 @@ fn show_blocked_message(message: &str) -> Result<()> {
         ) -> i32;
     }
 
-    const MB_OK: u32 = 0x0000_0000;
-    const MB_ICONWARNING: u32 = 0x0000_0030;
     const MB_SETFOREGROUND: u32 = 0x0001_0000;
     const MB_TOPMOST: u32 = 0x0004_0000;
 
     let text: Vec<u16> = message.encode_utf16().chain(once(0)).collect();
-    let caption: Vec<u16> = "UEWorkshopScanner blocked a map"
-        .encode_utf16()
-        .chain(once(0))
-        .collect();
+    let caption: Vec<u16> = caption.encode_utf16().chain(once(0)).collect();
 
     // SAFETY: Both strings are valid, null-terminated UTF-16 buffers that remain
     // alive for the duration of this synchronous Win32 call.
-    unsafe {
+    let result = unsafe {
         MessageBoxW(
             std::ptr::null_mut(),
             text.as_ptr(),
             caption.as_ptr(),
-            MB_OK | MB_ICONWARNING | MB_SETFOREGROUND | MB_TOPMOST,
-        );
+            message_type | MB_SETFOREGROUND | MB_TOPMOST,
+        )
+    };
+    if result == 0 {
+        bail!("Windows could not display the setup message");
     }
-    Ok(())
+    Ok(result)
 }
 
 #[cfg(not(windows))]
-fn show_blocked_message(message: &str) -> Result<()> {
-    eprintln!("{message}");
+fn message_box(caption: &str, message: &str, _message_type: u32) -> Result<i32> {
+    eprintln!("{caption}\n\n{message}");
+    Ok(1)
+}
+
+pub(crate) fn show_warning(caption: &str, message: &str) -> Result<()> {
+    const MB_OK: u32 = 0x0000_0000;
+    const MB_ICONWARNING: u32 = 0x0000_0030;
+    message_box(caption, message, MB_OK | MB_ICONWARNING)?;
     Ok(())
+}
+
+pub(crate) fn show_information(caption: &str, message: &str) -> Result<()> {
+    const MB_OK: u32 = 0x0000_0000;
+    const MB_ICONINFORMATION: u32 = 0x0000_0040;
+    message_box(caption, message, MB_OK | MB_ICONINFORMATION)?;
+    Ok(())
+}
+
+pub(crate) fn confirm(caption: &str, message: &str) -> Result<bool> {
+    const MB_YESNO: u32 = 0x0000_0004;
+    const MB_ICONQUESTION: u32 = 0x0000_0020;
+    const IDYES: i32 = 6;
+    Ok(message_box(caption, message, MB_YESNO | MB_ICONQUESTION)? == IDYES)
 }
 
 #[cfg(test)]

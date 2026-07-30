@@ -36,7 +36,7 @@ local function reports_directory()
     return path
 end
 
-local function workshop_root()
+local function game_win64_directory()
     local directories = IterateGameDirectories()
     local win64 = directories
         and directories.Game
@@ -46,8 +46,16 @@ local function workshop_root()
     if not path then
         return nil
     end
+    return normalize(path)
+end
 
-    local steamapps = normalize(path)
+local function workshop_root()
+    local win64 = game_win64_directory()
+    if not win64 then
+        return nil
+    end
+
+    local steamapps = win64
     for _ = 1, 5 do
         steamapps = dirname(steamapps)
         if not steamapps then
@@ -55,6 +63,15 @@ local function workshop_root()
         end
     end
     return steamapps .. "\\workshop\\content\\" .. STEAM_APP_ID
+end
+
+local function ue4ss_path()
+    local overlay = os.getenv("SHIMLOADER_OVERLAY_DIR")
+    if overlay and overlay ~= "" then
+        return normalize(overlay) .. "\\MecchaUE4SS\\UE4SS.dll"
+    end
+    local win64 = game_win64_directory()
+    return win64 and (win64 .. "\\UE4SS.dll") or nil
 end
 
 local mount_scan_states = {}
@@ -253,7 +270,11 @@ local function install_mount_gate_hook()
     return true
 end
 
-if not install_mount_gate_hook() then
+local function activate_protection()
+    if install_mount_gate_hook() then
+        return
+    end
+
     log("Protection will activate automatically when the game finishes loading.")
     local retry_handle
     retry_handle = LoopInGameThreadWithDelay(1000, function()
@@ -262,3 +283,66 @@ if not install_mount_gate_hook() then
         end
     end)
 end
+
+local function start_integration_setup()
+    local scanner = mod_root() .. "\\bin\\ue-workshop-scanner.exe"
+    local win64 = game_win64_directory()
+    local ue4ss = ue4ss_path()
+    if not win64 or not ue4ss then
+        log("Protection is inactive because the game or UE4SS path could not be resolved.")
+        return
+    end
+
+    local scanner_file = io.open(scanner, "rb")
+    if not scanner_file then
+        log("Protection is inactive because the scanner is missing: " .. scanner)
+        return
+    end
+    scanner_file:close()
+
+    local status_path = reports_directory() .. "\\integration-setup.status"
+    local process_log = reports_directory() .. "\\integration-setup.log"
+    os.remove(status_path)
+    os.remove(process_log)
+
+    log("Checking compatibility and first-time setup before enabling protection.")
+    ExecuteAsync(function()
+        local setup_command = table.concat({
+            quote(scanner),
+            "--integration-setup",
+            "--game-exe",
+            quote(win64 .. "\\PenguinHotel-Win64-Shipping.exe"),
+            "--ue4ss-dll",
+            quote(ue4ss)
+        }, " ") .. " > " .. quote(process_log) .. " 2>&1"
+        local inner_command = table.concat({
+            setup_command,
+            '& set "uew_exit=!errorlevel!"',
+            "& > " .. quote(status_path) .. " echo !uew_exit!",
+            "& exit /b !uew_exit!"
+        }, " ")
+        os.execute('cmd.exe /d /v:on /s /c "' .. inner_command .. '"')
+    end)
+
+    local setup_handle
+    setup_handle = LoopInGameThreadWithDelay(250, function()
+        local exit_code = read_scan_exit_code(status_path)
+        if exit_code == nil then
+            return
+        end
+        CancelDelayedAction(setup_handle)
+        if exit_code == 0 then
+            log("Compatibility and first-time setup passed.")
+            activate_protection()
+        else
+            log(
+                "Protection is inactive because setup exited with code "
+                .. tostring(exit_code)
+                .. ". See "
+                .. process_log
+            )
+        end
+    end)
+end
+
+start_integration_setup()

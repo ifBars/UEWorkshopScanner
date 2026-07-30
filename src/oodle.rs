@@ -10,7 +10,7 @@ const EPIC_OODLE_2_9_10_REDIST_SHA256: &[&str] = &[
     "6f5d41a7892ea6b2db420f2458dad2f84a63901c9a93ce9497337b16c195f457",
     "111a505e64a3bf1b89c05aab2dd16306bc2267a5ea3f0c9722a3b6152091ce1c",
 ];
-const BINARY_EULA_VERSION: &str = "1";
+const BINARY_EULA_VERSION: &str = "2";
 const BINARY_EULA: &str = include_str!("../BINARY-EULA.txt");
 const PROJECT_LICENSE: &str = include_str!("../LICENSE");
 const THIRD_PARTY_NOTICES: &str = include_str!("../THIRD_PARTY_NOTICES.txt");
@@ -54,6 +54,33 @@ pub(crate) fn accept_bundled_eula() -> Result<()> {
         bail!("no bundled {BUNDLED_OODLE_FILE} was found beside the scanner executable");
     }
     configure(None, None, true)
+}
+
+pub(crate) fn bundled_eula_is_accepted() -> Result<bool> {
+    Ok(eula_acceptance_is_current(&eula_acceptance_path()?))
+}
+
+pub(crate) fn bundled_eula_path() -> Result<PathBuf> {
+    let path = std::env::current_exe()
+        .context("could not resolve the scanner executable path")?
+        .with_file_name("BINARY-EULA.txt");
+    if !path.is_file() {
+        bail!("the bundled EULA is missing: {}", path.display());
+    }
+    Ok(path)
+}
+
+pub(crate) fn verify_bundled_distribution(accept_eula: bool) -> Result<()> {
+    let bundled = std::env::current_exe()
+        .context("could not resolve the scanner executable path")?
+        .with_file_name(BUNDLED_OODLE_FILE);
+    if !bundled.is_file() {
+        bail!(
+            "the Meccha integration is missing bundled {BUNDLED_OODLE_FILE}: {}",
+            bundled.display()
+        );
+    }
+    configure(None, None, accept_eula)
 }
 
 fn verify_decoder(path: &Path, expected_digest: Option<&str>) -> Result<String> {

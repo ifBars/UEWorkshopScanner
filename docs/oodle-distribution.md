@@ -20,7 +20,7 @@ including other Unreal Engine components.
 The intended release layout would be:
 
 ```text
-UEWorkshopScanner-windows-x64/
+UEWorkshopScanner-cli-windows-x64/
   ue-workshop-scanner.exe
   oo2core_9_win64.dll
   BINARY-EULA.txt
@@ -48,7 +48,10 @@ expected by retoc's upstream loader.
 The release must include `BINARY-EULA.txt` and `THIRD_PARTY_NOTICES.txt`. The
 CLI must expose those terms through `--licenses`, require one-time acceptance
 when it uses the bundled decoder, and support explicit `--accept-eula` for
-non-interactive use.
+non-interactive use. Binary EULA version 2 also states that the scanner can
+produce false positives, false negatives, incomplete results, or errors; does
+not replace antivirus or backups; provides no security guarantee; and limits
+warranties and liability only to the extent permitted by applicable law.
 
 ## Why permission is plausible
 

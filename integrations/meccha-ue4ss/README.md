@@ -10,8 +10,10 @@ edit the shared UE4SS `Mods.txt` file.
 The distributable integration has a tested reflected pre-mount boundary:
 
 - startup automatically hooks Meccha's
-  `MountIoStoreAndGetLevelsFromAssetRegistry` call and diagnostic Workshop
-  lifecycle;
+  `MountIoStoreAndGetLevelsFromAssetRegistry` call after setup passes;
+- the scanner verifies the exact tested game and UE4SS DLL hashes before
+  installing the hook;
+- first launch opens the complete binary EULA and records explicit acceptance;
 - if the function is not resident yet, a one-second delayed loop retries until
   registration succeeds and then cancels itself;
 - the mount path is replaced with an invalid path while the asynchronous scan
@@ -32,14 +34,17 @@ should replace it before a stable release.
 ```powershell
 .\scripts\package-meccha-ue4ss.ps1 `
   -OodlePath "D:\path\to\oo2core_9_win64.dll" `
-  -Version "0.1.0"
+  -Ue4ssOverlayPath "D:\path\to\MecchaUE4SS" `
+  -Version "0.1.0-alpha.2"
 ```
 
 The script creates:
 
 - a Thunderstore ZIP whose root follows Thunderstore's package format;
 - a Nexus ZIP containing `Mods/UEWorkshopScanner`;
-- SHA-256 files for both archives.
+- a GitHub manual-install ZIP containing the exact tested UE4SS build;
+- internal `SHA256SUMS`, licenses, and an external `.zip.sha256` for every
+  release archive.
 
 The script performs no uploads and does not include any Workshop maps.
 
@@ -47,14 +52,15 @@ The script performs no uploads and does not include any Workshop maps.
 
 Before calling this integration stable:
 
-1. install the generated package in an isolated Thunderstore profile;
-2. accept the bundled binary terms;
+1. install the generated package in an isolated profile;
+2. complete the first-run EULA flow;
 3. confirm the UE4SS log reports `Protection active` without any user input;
 4. reproduce the client download flow with a benign test map;
 5. verify the clean scan delays and then permits the mount;
 6. verify the native warning and forced-close fallback with an inert blocking
    fixture;
 7. verify `review`, `block`, and `incomplete` independently;
-8. add exact game-version gating before stable release.
+8. repeat the setup with a deliberately mismatched copy to confirm protection
+   stays inactive and a compatibility warning appears.
 
 Do not test a known malicious map in the game process.
