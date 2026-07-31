@@ -10,7 +10,13 @@ use anyhow::Result;
 use std::path::{Path, PathBuf};
 
 const RETOC_REVISION: &str = "d034ade1ae8117d4786eaf6b0418d4cf48474d7f";
-pub const REPORT_SCHEMA_VERSION: u32 = 1;
+pub const REPORT_SCHEMA_VERSION: u32 = 2;
+/// Default per-file and decoded IoStore chunk limit.
+///
+/// Unreal texture and map assets can legitimately exceed 32 MiB. The scanner
+/// still applies a finite limit so malformed or unusually large content cannot
+/// request an unbounded allocation.
+pub const DEFAULT_MAX_ITEM_BYTES: u64 = 512 * 1024 * 1024;
 
 /// An explicitly authorized Oodle decoder for compressed IoStore content.
 #[derive(Clone, Debug)]
@@ -48,7 +54,7 @@ pub struct ScannerOptions {
 impl Default for ScannerOptions {
     fn default() -> Self {
         Self {
-            max_item_bytes: 32 * 1024 * 1024,
+            max_item_bytes: DEFAULT_MAX_ITEM_BYTES,
             game_profile: None,
             oodle_decoder: None,
             accept_bundled_eula: false,
@@ -155,4 +161,18 @@ pub(crate) fn scan(
             "The patched Oodle adapter performs no network requests and accepts only a verified, process-wide decoder configuration.".to_owned(),
         ],
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_limit_allows_normal_large_unreal_assets() {
+        assert_eq!(
+            ScannerOptions::default().max_item_bytes,
+            DEFAULT_MAX_ITEM_BYTES
+        );
+        assert_eq!(DEFAULT_MAX_ITEM_BYTES, 512 * 1024 * 1024);
+    }
 }

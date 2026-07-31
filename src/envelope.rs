@@ -102,24 +102,29 @@ pub fn inspect_input(input: &Path, max_file_bytes: u64) -> Result<InputTarget> {
             }
         };
         counts.files_scanned += 1;
-        let mut markers = scan_markers(&bytes);
+        let mut marker_scan = scan_markers(&bytes);
         let dangerous =
             extension(&file).is_some_and(|ext| DANGEROUS_EXTENSIONS.contains(&ext.as_str()));
         if dangerous {
-            markers.insert("dangerous-extension");
+            let extension = extension(&file).unwrap_or_default();
+            marker_scan.insert_metadata(
+                "dangerous-extension",
+                format!(".{extension} file extension"),
+            );
         }
         if bytes.starts_with(b"MZ")
             && !extension(&file).is_some_and(|ext| matches!(ext.as_str(), "exe" | "dll" | "scr"))
         {
-            markers.insert("disguised-executable");
+            marker_scan.insert_metadata("disguised-executable", "MZ portable executable header");
         }
-        if !markers.is_empty() {
+        if !marker_scan.markers.is_empty() {
             loose_artifacts.push(Artifact {
                 location: relative(input, &file),
                 kind: "loose-file",
                 size: metadata.len(),
                 sha256: Some(sha256_file(&file)?),
-                markers,
+                markers: marker_scan.markers,
+                evidence: marker_scan.evidence,
             });
         }
     }

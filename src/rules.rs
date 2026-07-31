@@ -5,17 +5,24 @@ pub fn evaluate_artifact(artifact: &Artifact) -> Vec<Finding> {
     let execution_context =
         has("auto-execution") || has("file-write") || has("dangerous-extension");
     let mut findings = Vec::new();
-    let mut add = |rule_id, title, category, severity, blocking, evidence: Vec<&'static str>| {
-        findings.push(Finding::new(
-            rule_id,
-            title,
-            category,
-            severity,
-            blocking,
-            artifact.location.clone(),
-            evidence,
-        ));
-    };
+    let mut add =
+        |rule_id, title, category, severity, blocking, evidence_markers: Vec<&'static str>| {
+            let evidence = artifact
+                .evidence
+                .iter()
+                .filter(|evidence| evidence_markers.contains(&evidence.marker))
+                .cloned()
+                .collect();
+            findings.push(Finding::new(
+                rule_id,
+                title,
+                category,
+                severity,
+                blocking,
+                artifact.location.clone(),
+                evidence,
+            ));
+        };
 
     if has("historical-rce-name") {
         add(
@@ -232,6 +239,7 @@ pub fn evaluate_artifact(artifact: &Artifact) -> Vec<Finding> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::MarkerEvidence;
     use std::collections::BTreeSet;
 
     fn artifact(markers: &[&'static str]) -> Artifact {
@@ -241,6 +249,10 @@ mod tests {
             size: 1,
             sha256: None,
             markers: markers.iter().copied().collect::<BTreeSet<_>>(),
+            evidence: markers
+                .iter()
+                .map(|marker| MarkerEvidence::metadata(marker, format!("fixture:{marker}")))
+                .collect(),
         }
     }
 

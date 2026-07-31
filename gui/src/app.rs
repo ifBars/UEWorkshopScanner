@@ -4,10 +4,7 @@ use crate::{
 };
 use dioxus::prelude::*;
 use dioxus_desktop::{
-    tao::{
-        dpi::LogicalSize,
-        event::{Event, WindowEvent},
-    },
+    tao::event::{Event, WindowEvent},
     use_wry_event_handler,
 };
 use std::path::PathBuf;
@@ -20,25 +17,12 @@ pub fn App() -> Element {
     let mut scan_state = use_signal(ScanState::default);
     let setup_state = use_signal(SetupState::initial);
     let mut is_dragging = use_signal(|| false);
-    let desktop = dioxus_desktop::window();
-
-    use_effect(move || {
-        let target_height = target_window_height(&scan_state.read(), &setup_state.read());
-
-        if desktop.is_maximized() || desktop.fullscreen().is_some() {
-            return;
-        }
-
-        let physical_size = desktop.inner_size();
-        let logical_size = physical_size.to_logical::<f64>(desktop.scale_factor());
-        desktop.set_inner_size(LogicalSize::new(logical_size.width, target_height));
-    });
 
     let _drop_handler = use_wry_event_handler(move |event, _| match event {
         Event::WindowEvent {
             event: WindowEvent::HoveredFile(_),
             ..
-        } => is_dragging.set(true),
+        } if scan_state.read().shows_picker() => is_dragging.set(true),
         Event::WindowEvent {
             event: WindowEvent::HoveredFileCancelled,
             ..
@@ -46,7 +30,7 @@ pub fn App() -> Element {
         Event::WindowEvent {
             event: WindowEvent::DroppedFile(path),
             ..
-        } => {
+        } if scan_state.read().shows_picker() => {
             is_dragging.set(false);
             selected_path.set(Some(path.to_path_buf()));
             scan_state.set(ScanState::Ready);
@@ -85,12 +69,14 @@ pub fn App() -> Element {
                     "Currently supports MECCHA CHAMELEON maps"
                 }
 
-                ScanPicker {
-                    selected_path,
-                    scan_state,
-                    is_dragging: is_dragging()
+                if scan_state.read().shows_picker() {
+                    ScanPicker {
+                        selected_path,
+                        scan_state,
+                        is_dragging: is_dragging()
+                    }
                 }
-                ResultView { scan_state }
+                ResultView { scan_state, selected_path }
             } else {
                 EulaSetup { setup_state }
             }
@@ -99,42 +85,5 @@ pub fn App() -> Element {
                 "A clean result lowers risk, but no scanner can guarantee a map is safe. Keep your antivirus enabled."
             }
         }
-    }
-}
-
-fn target_window_height(scan_state: &ScanState, setup_state: &SetupState) -> f64 {
-    if !setup_state.is_ready() {
-        return 720.0;
-    }
-
-    match scan_state {
-        ScanState::Ready => 490.0,
-        ScanState::Running => 560.0,
-        ScanState::Complete(_) | ScanState::Error(_) => 720.0,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn expands_for_results_and_errors() {
-        assert_eq!(
-            target_window_height(&ScanState::Ready, &SetupState::Ready),
-            490.0
-        );
-        assert_eq!(
-            target_window_height(&ScanState::Running, &SetupState::Ready),
-            560.0
-        );
-        assert_eq!(
-            target_window_height(&ScanState::Error("test".to_owned()), &SetupState::Ready),
-            720.0
-        );
-        assert_eq!(
-            target_window_height(&ScanState::Ready, &SetupState::EulaRequired),
-            720.0
-        );
     }
 }

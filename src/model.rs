@@ -38,6 +38,41 @@ pub struct Artifact {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sha256: Option<String>,
     pub markers: BTreeSet<&'static str>,
+    pub evidence: Vec<MarkerEvidence>,
+}
+
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct MarkerEvidence {
+    pub marker: &'static str,
+    pub value: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub byte_offset: Option<u64>,
+    pub encoding: &'static str,
+}
+
+impl MarkerEvidence {
+    pub fn observed(
+        marker: &'static str,
+        value: String,
+        byte_offset: usize,
+        encoding: &'static str,
+    ) -> Self {
+        Self {
+            marker,
+            value,
+            byte_offset: Some(byte_offset as u64),
+            encoding,
+        }
+    }
+
+    pub fn metadata(marker: &'static str, value: impl Into<String>) -> Self {
+        Self {
+            marker,
+            value: value.into(),
+            byte_offset: None,
+            encoding: "metadata",
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -49,7 +84,7 @@ pub struct Finding {
     pub severity: &'static str,
     pub blocking: bool,
     pub location: String,
-    pub evidence: Vec<&'static str>,
+    pub evidence: Vec<MarkerEvidence>,
 }
 
 impl Finding {
@@ -60,7 +95,7 @@ impl Finding {
         severity: &'static str,
         blocking: bool,
         location: String,
-        evidence: Vec<&'static str>,
+        evidence: Vec<MarkerEvidence>,
     ) -> Self {
         let mut hasher = Sha256::new();
         hasher.update(rule_id.as_bytes());

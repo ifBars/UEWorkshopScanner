@@ -7,6 +7,10 @@ use rayon::prelude::*;
 use retoc::{Config, iostore};
 use std::{path::Path, sync::Arc};
 
+// Preserve parallel scanning for normal assets while preventing several large
+// decoded chunks from occupying memory at the same time.
+const PARALLEL_CHUNK_BYTES: u64 = 32 * 1024 * 1024;
+
 struct ChunkScan {
     artifact: Option<Artifact>,
     scanned: bool,
@@ -54,68 +58,20 @@ fn scan_utoc(
         .unwrap_or_default()
         .to_string_lossy()
         .into_owned();
-    let scans = chunks
+    let mut scans = chunks
         .par_iter()
-        .map(|chunk| {
-            if chunk.size() == 0 {
-                return ChunkScan {
-                    artifact: None,
-                    scanned: false,
-                    skipped_for_size: false,
-                    reason: None,
-                };
-            }
-            let location = format!(
-                "{prefix}::{}",
-                chunk
-                    .path()
-                    .unwrap_or_else(|| format!("chunk:{:?}", chunk.id()))
-            );
-            if chunk.size() > max_chunk_bytes {
-                return ChunkScan {
-                    artifact: None,
-                    scanned: false,
-                    skipped_for_size: true,
-                    reason: Some(CompletenessReason {
-                        reason_id: "chunk-skipped-for-size",
-                        phase: "container-read",
-                        summary: format!(
-                            "Chunk exceeds the configured {max_chunk_bytes} byte limit"
-                        ),
-                        location: Some(location),
-                    }),
-                };
-            }
-            match chunk.read() {
-                Ok(bytes) => {
-                    let markers = scan_markers(&bytes);
-                    ChunkScan {
-                        artifact: (!markers.is_empty()).then_some(Artifact {
-                            location,
-                            kind: "iostore-chunk",
-                            size: chunk.size(),
-                            sha256: None,
-                            markers,
-                        }),
-                        scanned: true,
-                        skipped_for_size: false,
-                        reason: None,
-                    }
-                }
-                Err(error) => ChunkScan {
-                    artifact: None,
-                    scanned: false,
-                    skipped_for_size: false,
-                    reason: Some(CompletenessReason {
-                        reason_id: "chunk-read-failed",
-                        phase: "container-read",
-                        summary: format!("retoc could not read chunk: {error:#}"),
-                        location: Some(location),
-                    }),
-                },
-            }
-        })
+        .enumerate()
+        .filter(|(_, chunk)| chunk.size() <= PARALLEL_CHUNK_BYTES)
+        .map(|(index, chunk)| (index, scan_chunk(chunk, &prefix, max_chunk_bytes)))
         .collect::<Vec<_>>();
+    scans.extend(
+        chunks
+            .iter()
+            .enumerate()
+            .filter(|(_, chunk)| chunk.size() > PARALLEL_CHUNK_BYTES)
+            .map(|(index, chunk)| (index, scan_chunk(chunk, &prefix, max_chunk_bytes))),
+    );
+    scans.sort_unstable_by_key(|(index, _)| *index);
 
     let mut artifacts = Vec::new();
     let mut counts = ScanCounts {
@@ -123,11 +79,80 @@ fn scan_utoc(
         ..ScanCounts::default()
     };
     let mut reasons = Vec::new();
-    for scan in scans {
+    for (_, scan) in scans {
         counts.chunks_scanned += usize::from(scan.scanned);
         counts.chunks_skipped_for_size += usize::from(scan.skipped_for_size);
         artifacts.extend(scan.artifact);
         reasons.extend(scan.reason);
     }
     Ok((artifacts, counts, reasons))
+}
+
+fn scan_chunk(chunk: &iostore::ChunkInfo<'_>, prefix: &str, max_chunk_bytes: u64) -> ChunkScan {
+    if chunk.size() == 0 {
+        return ChunkScan {
+            artifact: None,
+            scanned: false,
+            skipped_for_size: false,
+            reason: None,
+        };
+    }
+    let location = format!(
+        "{prefix}::{}",
+        chunk
+            .path()
+            .unwrap_or_else(|| format!("chunk:{:?}", chunk.id()))
+    );
+    if chunk.size() > max_chunk_bytes {
+        return ChunkScan {
+            artifact: None,
+            scanned: false,
+            skipped_for_size: true,
+            reason: Some(CompletenessReason {
+                reason_id: "chunk-skipped-for-size",
+                phase: "container-read",
+                summary: format!(
+                    "Chunk is {} bytes ({:.1} MiB), above the configured {} byte ({:.1} MiB) limit",
+                    chunk.size(),
+                    bytes_to_mib(chunk.size()),
+                    max_chunk_bytes,
+                    bytes_to_mib(max_chunk_bytes)
+                ),
+                location: Some(location),
+            }),
+        };
+    }
+    match chunk.read() {
+        Ok(bytes) => {
+            let marker_scan = scan_markers(&bytes);
+            ChunkScan {
+                artifact: (!marker_scan.markers.is_empty()).then_some(Artifact {
+                    location,
+                    kind: "iostore-chunk",
+                    size: chunk.size(),
+                    sha256: None,
+                    markers: marker_scan.markers,
+                    evidence: marker_scan.evidence,
+                }),
+                scanned: true,
+                skipped_for_size: false,
+                reason: None,
+            }
+        }
+        Err(error) => ChunkScan {
+            artifact: None,
+            scanned: false,
+            skipped_for_size: false,
+            reason: Some(CompletenessReason {
+                reason_id: "chunk-read-failed",
+                phase: "container-read",
+                summary: format!("retoc could not read chunk: {error:#}"),
+                location: Some(location),
+            }),
+        },
+    }
+}
+
+fn bytes_to_mib(bytes: u64) -> f64 {
+    bytes as f64 / (1024.0 * 1024.0)
 }

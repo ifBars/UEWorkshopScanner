@@ -1,6 +1,6 @@
 [package]
 name = "ue-workshop-scanner"
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4"
 edition = "2024"
 rust-version = "1.88"
 license = "MIT"
@@ -12,6 +12,7 @@ categories = ["command-line-utilities"]
 publish = false
 
 [dependencies]
+aho-corasick = "1.1.4"
 anyhow = "1.0.100"
 hex = "0.4.3"
 oodle_loader = { path = "vendor/oodle_loader_safe" }

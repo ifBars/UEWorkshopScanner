@@ -21,7 +21,7 @@ contact a remote service, or execute files found inside a Workshop item.
 ## Download
 
 For the easiest setup, download the `desktop-windows-x64` ZIP from the
-[experimental release](https://github.com/ifBars/UEWorkshopScanner/releases/tag/v0.1.0-alpha.3).
+[experimental release](https://github.com/ifBars/UEWorkshopScanner/releases/tag/v0.1.0-alpha.4).
 It contains a simple desktop app and the files needed to read compressed Unreal
 Engine content. No command-line setup is required.
 

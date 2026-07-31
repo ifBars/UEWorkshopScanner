@@ -2,7 +2,7 @@ use crate::{
     game_profile::{built_in_game_profiles, game_profile},
     oodle,
     output::{OutputFormat, format_summary},
-    scanner::{OodleDecoder, Scanner, ScannerOptions},
+    scanner::{DEFAULT_MAX_ITEM_BYTES, OodleDecoder, Scanner, ScannerOptions},
 };
 use anyhow::{Context, Result, bail};
 use std::{ffi::OsString, path::PathBuf};
@@ -120,7 +120,7 @@ fn parse_options(args: Vec<OsString>) -> Result<Options> {
     )?;
     let mut oodle_path = None;
     let mut oodle_sha256 = None;
-    let mut max_item_bytes = 32 * 1024 * 1024;
+    let mut max_item_bytes = DEFAULT_MAX_ITEM_BYTES;
     let mut accept_eula = false;
     let mut game = None;
     let mut output = None;
@@ -200,7 +200,7 @@ fn print_help() {
            ue-workshop-scanner --accept-eula\n  \
            ue-workshop-scanner --licenses\n\n\
          Options:\n  \
-           --max-item-mb <n>        Per-file/chunk scan cap (1-2048, default 32)\n  \
+           --max-item-mb <n>        Per-file/chunk scan cap (1-2048, default 512)\n  \
            --max-chunk-mb <n>       Backward-compatible alias for --max-item-mb\n  \
            --oodle-path <dll>       Explicit Oodle decoder path\n  \
            --oodle-sha256 <hex>     Required digest for an explicit decoder\n  \
@@ -239,6 +239,13 @@ mod tests {
         assert!(options.game.is_none());
         assert!(options.output.is_none());
         assert_eq!(options.output_format, OutputFormat::Json);
+    }
+
+    #[test]
+    fn uses_shared_default_size_limit() {
+        let options = parse_options(vec!["fixture".into()]).unwrap();
+
+        assert_eq!(options.max_item_bytes, DEFAULT_MAX_ITEM_BYTES);
     }
 
     #[test]

@@ -80,7 +80,7 @@ works for CI, researchers, mod managers, and games that can invoke an external
 worker.
 
 The crate now exposes `Scanner`, `ScannerOptions`, and public report types. JSON
-reports include `schema_version: 1`; consumers should reject unsupported major
+reports include `schema_version: 2`; consumers should reject unsupported major
 schema versions rather than guessing at changed semantics.
 
 ### Launcher preflight

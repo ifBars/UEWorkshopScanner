@@ -19,8 +19,8 @@ fn main() {
 
     let window = dioxus::desktop::WindowBuilder::new()
         .with_title("UEWorkshopScanner")
-        .with_inner_size(dioxus::desktop::LogicalSize::new(760.0, 490.0))
-        .with_min_inner_size(dioxus::desktop::LogicalSize::new(640.0, 440.0))
+        .with_inner_size(dioxus::desktop::LogicalSize::new(780.0, 640.0))
+        .with_min_inner_size(dioxus::desktop::LogicalSize::new(680.0, 520.0))
         .with_resizable(true)
         .with_decorations(true);
 

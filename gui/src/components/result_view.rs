@@ -4,9 +4,13 @@ use crate::{
     view_model::{PlayerVerdict, player_verdict},
 };
 use dioxus::prelude::*;
+use std::path::PathBuf;
 
 #[component]
-pub fn ResultView(scan_state: Signal<ScanState>) -> Element {
+pub fn ResultView(
+    mut scan_state: Signal<ScanState>,
+    mut selected_path: Signal<Option<PathBuf>>,
+) -> Element {
     match &*scan_state.read() {
         ScanState::Ready => rsx! {
             div { class: "ready-note",
@@ -46,6 +50,14 @@ pub fn ResultView(scan_state: Signal<ScanState>) -> Element {
                 details { class: "technical-details",
                     summary { "Show error details" }
                     pre { "{error}" }
+                }
+                button {
+                    class: "button primary result-action single",
+                    onclick: move |_| {
+                        selected_path.set(None);
+                        scan_state.set(ScanState::Ready);
+                    },
+                    "Choose another map"
                 }
             }
         },
@@ -104,14 +116,64 @@ pub fn ResultView(scan_state: Signal<ScanState>) -> Element {
                         }
                     }
 
-                    button {
-                        class: "button secondary report-button",
-                        onclick: move |_| {
-                            if let Err(error) = reveal_report(&report_path) {
-                                tracing::warn!(%error, "could not reveal report");
+                    if !outcome.report.findings.is_empty() {
+                        div { class: "findings-box",
+                            h3 { "Evidence" }
+                            p { class: "findings-intro",
+                                "These are the exact values the scanner observed in the map."
                             }
-                        },
-                        "Open saved report"
+                            for finding in &outcome.report.findings {
+                                article { class: "finding-item",
+                                    div { class: "finding-heading",
+                                        strong { "{finding.title}" }
+                                        span { class: "severity {finding.severity}",
+                                            "{finding.severity}"
+                                        }
+                                    }
+                                    div { class: "finding-rule", "{finding.rule_id}" }
+                                    code { class: "finding-location", "{finding.location}" }
+                                    ul { class: "evidence-list",
+                                        for evidence in &finding.evidence {
+                                            li {
+                                                div {
+                                                    span { class: "evidence-kind", "{evidence.marker}" }
+                                                    if let Some(offset) = evidence.byte_offset {
+                                                        span { class: "evidence-meta",
+                                                            "byte {offset} · {evidence.encoding}"
+                                                        }
+                                                    } else {
+                                                        span { class: "evidence-meta",
+                                                            "{evidence.encoding}"
+                                                        }
+                                                    }
+                                                }
+                                                code { "{evidence.value}" }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    div { class: "result-actions",
+                        button {
+                            class: "button primary result-action",
+                            onclick: move |_| {
+                                selected_path.set(None);
+                                scan_state.set(ScanState::Ready);
+                            },
+                            "Scan another map"
+                        }
+                        button {
+                            class: "button secondary result-action",
+                            onclick: move |_| {
+                                if let Err(error) = reveal_report(&report_path) {
+                                    tracing::warn!(%error, "could not reveal report");
+                                }
+                            },
+                            "Open saved report"
+                        }
                     }
 
                     details { class: "technical-details",
@@ -125,16 +187,6 @@ pub fn ResultView(scan_state: Signal<ScanState>) -> Element {
                             code { "{outcome.report.findings.len()}" }
                             span { "Report format" }
                             code { "v{outcome.report.schema_version}" }
-                        }
-                        if !outcome.report.findings.is_empty() {
-                            div { class: "technical-list",
-                                for finding in &outcome.report.findings {
-                                    p {
-                                        strong { "{finding.rule_id}" }
-                                        " — {finding.severity} — {finding.location}"
-                                    }
-                                }
-                            }
                         }
                         code { class: "report-path", "{outcome.report_path.display()}" }
                     }

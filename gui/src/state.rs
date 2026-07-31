@@ -30,3 +30,21 @@ pub enum ScanState {
     Complete(Box<ScanOutcome>),
     Error(String),
 }
+
+impl ScanState {
+    pub fn shows_picker(&self) -> bool {
+        matches!(self, Self::Ready)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn picker_is_only_visible_before_a_scan() {
+        assert!(ScanState::Ready.shows_picker());
+        assert!(!ScanState::Running.shows_picker());
+        assert!(!ScanState::Error("test".to_owned()).shows_picker());
+    }
+}
