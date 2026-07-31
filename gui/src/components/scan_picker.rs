@@ -1,4 +1,5 @@
 use crate::{scanner::scan_workshop_item, state::ScanState};
+use dioxus::dioxus_core::spawn_forever;
 use dioxus::prelude::*;
 use std::path::PathBuf;
 
@@ -62,7 +63,10 @@ pub fn ScanPicker(
                         return;
                     };
                     scan_state.set(ScanState::Running);
-                    spawn(async move {
+                    // Running replaces this picker with the result view. A
+                    // scope-owned task would be canceled as soon as that
+                    // unmount happens, so the scan must outlive this component.
+                    spawn_forever(async move {
                         match scan_workshop_item(path).await {
                             Ok(outcome) => scan_state.set(ScanState::Complete(Box::new(outcome))),
                             Err(error) => scan_state.set(ScanState::Error(error.to_string())),
